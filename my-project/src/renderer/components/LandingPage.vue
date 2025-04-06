@@ -5,7 +5,7 @@
     <div style="display: flex;">    
       <div style="width: 70%;">
         <div style="height: 100%;width: 100%;">
-          <div style="text-align: center;font-size: larger;font-weight: 900;color: black;background-color: #e9eef3;">可视化</div>
+          <div style="text-align: center;font-size: larger;font-weight: 900;color: black;background-color: #e9eef3;">摄像头画面</div>
             <div v-if="isShowImg">            
               <img   :src="imgurl" alt="electron-vue" >
             </div>
@@ -18,6 +18,7 @@
 
       </div>
       <div style="width: 30%;height: 90vh;"><div style="height: 4vh;"></div><div style="height: 86vh;background-color: #ffffff;border-radius: 1.5vw;">
+        <div v-if="isLogin == true"><!---->
         <div style="text-align: center;font-weight: 900;line-height: 10vh;font-size: 25px;">控制面板</div>
         <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
           <el-select v-model="value" placeholder="模式选择" @change="change">
@@ -31,7 +32,7 @@
         </div>
 
         <div v-if="value==1">
-          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;" @click="openFace" >
+          <!--<div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;" @click="openFace" >
           <div style="width: 40%;text-align: center;">人脸检测</div>
           <el-switch
           v-model="isFace"
@@ -39,7 +40,7 @@
           inactive-text="关闭"
           >
           </el-switch>
-          </div>
+          </div>-->
 
           <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;" @click="openPoint" >
             <div style="width: 40%;text-align: center;">关键点显示</div>
@@ -51,7 +52,7 @@
           </el-switch>
           </div>
 
-          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;" @click="openAlign" >
+          <!--<div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;" @click="openAlign" >
             <div style="width: 40%;text-align: center;">人脸对齐</div>
           <el-switch
           v-model="isAlign"
@@ -59,7 +60,7 @@
           inactive-text="关闭"
           >
           </el-switch>
-          </div>
+          </div>-->
 
           <div style="height: 20vh;"></div>
           <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
@@ -70,6 +71,9 @@
         </div>
         <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
           <el-button type="primary" style="width: 80%;font-weight: 600;" @click="openCamera">开启摄像头</el-button>
+        </div>
+        <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+          <el-button type="primary" style="width: 80%;font-weight: 600;" @click="redirectToAdmin" >人脸管理</el-button>
         </div>
         </div>
         <div v-if="value==2">
@@ -156,6 +160,24 @@
           </el-switch>
           </div>
         </div>
+      </div><!---->
+
+      <div v-else>
+        <div style="text-align: center;font-weight: 900;line-height: 10vh;font-size: 25px;">系统登录</div>
+        <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+            <el-input style="width: 80%;" v-model="name" placeholder="请输入名字"></el-input>
+        </div>
+        <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+          <el-button type="primary" style="width: 80%;font-weight: 600;" @click="storageFace">注册人脸</el-button>
+        </div>
+        <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+          <el-button type="primary" style="width: 80%;font-weight: 600;" @click="openCamera">登录</el-button>
+        </div>
+        <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+          <el-button type="primary" style="width: 80%;font-weight: 600;" @click="openCamera">开启摄像头</el-button>
+        </div>
+      </div>
+
       </div> </div>
     </div>
   </el-main>
@@ -172,6 +194,7 @@
     data () {
       return {
         //
+        isLogin: false,
         EyeCount : 0,
         MouthCount : 0,
         HeadLeftCount : 0,
@@ -216,6 +239,10 @@
       //
     },
     methods: {
+
+      redirectToAdmin() {
+        window.open("http://127.0.0.1:8000/admin/", "_blank");
+  },
 
       turnOnGetCount() {
         this.isGettingCount = true;
