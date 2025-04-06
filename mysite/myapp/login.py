@@ -9,17 +9,10 @@ import numpy as np
 from scipy.spatial.distance import cosine
 from django.views.decorators.csrf import csrf_exempt
 from myapp.models import Face
-from ultralytics import YOLO
-from djitellopy import Tello
+import re
 import time
 import logging
-import re
 
-# 调整ROI参数（右侧位置）
-ROI_WIDTH_RATIO = 1.2
-ROI_HEIGHT_RATIO = 1.5
-ROI_OFFSET_X_RATIO = 1.2  # 正数表示右侧偏移
-ROI_OFFSET_Y_RATIO = 0.8
 
 logging.basicConfig(
     level=logging.INFO,
@@ -42,7 +35,6 @@ class FaceLogin:
         self.app = FaceAnalysis(allowed_modules=['detection', 'recognition', 'landmark_2d_106'],
                                 providers=['CUDAExecutionProvider', 'CPUExecutionProvider'])
         self.app.prepare(ctx_id=0 if torch.cuda.is_available() else -1, det_size=(640, 640))
-        self.model = YOLO(os.path.join(os.path.dirname(__file__), 'best.pt'))
 
         self.isOpenPcCamera = False  # 默认开启摄像头
         self.isFaceRecognize = True  # True：开摄像头同时人脸检测
