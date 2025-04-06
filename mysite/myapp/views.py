@@ -10,7 +10,6 @@ from scipy.spatial.distance import cosine
 from django.views.decorators.csrf import csrf_exempt
 from myapp.models import Face
 from ultralytics import YOLO
-from myapp.live import eye_aspect_ratio, mouth_aspect_ratio, nose_jaw_distance
 from djitellopy import Tello
 import time
 import logging
@@ -45,17 +44,14 @@ class FaceLogin:
         self.app.prepare(ctx_id=0 if torch.cuda.is_available() else -1, det_size=(640, 640))
         self.model = YOLO(os.path.join(os.path.dirname(__file__), 'best.pt'))
 
-        self.isOpenPcCamera = True  # 默认开启摄像头
-        self.isFaceRecognize = False  # 人脸检测
+        self.isOpenPcCamera = False  # 默认开启摄像头
+        self.isFaceRecognize = True  # True：开摄像头同时人脸检测
         self.isOpenAlign = False  # 对齐
         self.firstRecognizedPeople = None  # 是否已经识别过人脸，用于存在多人脸的识别情况
 
         self.isStorageFace = False
         self.name = ""
         self.embedding = []
-
-        # self.isHandRecognize = False
-        # self.isHandPoint = False
 
         self.frame = None
 
@@ -66,7 +62,6 @@ class FaceLogin:
         left_eye = face['kps'][0]
         right_eye = face['kps'][1]
 
-        eye_dist = np.linalg.norm(np.array(right_eye) - np.array(left_eye))
         dy = right_eye[1] - left_eye[1]
         dx = right_eye[0] - left_eye[0]
         angle = np.arctan2(dy, dx) * 180 / np.pi
@@ -74,9 +69,6 @@ class FaceLogin:
         center = ((left_eye[0] + right_eye[0]) / 2, (left_eye[1] + right_eye[1]) / 2)
         M = cv2.getRotationMatrix2D(center, angle, 1.0)  # 1.0 是缩放因子
         rotated_frame = cv2.warpAffine(frame, M, (frame.shape[1], frame.shape[0]))
-
-        rotated_left_eye = np.dot(M[:, :2], np.array(left_eye).T) + M[:, 2]
-        rotated_right_eye = np.dot(M[:, :2], np.array(right_eye).T) + M[:, 2]
 
         bbox = face['bbox']
         face_width = bbox[2] - bbox[0]
@@ -90,30 +82,19 @@ class FaceLogin:
         return resized_face
 
     def storage_face(self, frame, face, name):
-        if not os.path.exists('database'):
-            os.mkdir('database')
-        bbox = face['bbox']
-        x1, y1, x2, y2 = bbox[:]
-        embedding = face['embedding']
+        try:
+            embedding = face['embedding']
 
-        # 裁剪出人脸图像
-        face_image = frame[int(y1):int(y2), int(x1):int(x2)]
+            # 创建 Face 对象并存储信息到数据库
+            face_entry = Face(name=name)
+            face_entry.set_feature_vector(embedding)
+            face_entry.address = time.time()
+            face_entry.save()
 
-        # 生成一个唯一的图片名称
-
-        # 创建 Face 对象并存储信息到数据库
-        face_entry = Face(name=name, address="1")
-        face_entry.set_feature_vector(embedding)
-        face_entry.save()
-
-        image_filename = f"database/{face_entry.id}/{name}_{str(np.random.randint(1000))}.jpg"
-        face_entry.address = image_filename
-        face_entry.save()
-        # 将人脸图像保存到文件
-        cv2.imwrite(image_filename, face_image)
-
-        logging.info(f"Stored face info for {name} at {image_filename}")
-        return face_entry
+            return face_entry
+        except Exception as e:
+            logging.error(f"存储人脸信息时出错： {e}")
+            return None
 
     def compare_face_with_database(self, face, threshold=0.4):
         """从数据库中比较人脸
@@ -180,7 +161,10 @@ class FaceLogin:
                         face_exists = True
                     # 如果需要存储人脸且只检测到一张人脸
                     if self.isStorageFace:
-                        self.storage_face(self.frame, faces[0], self.name)
+                        # 人脸对齐
+                        aligned_frame = self.align_face(faces[0], self.frame)
+                        aligned_face = self.app.get(aligned_frame)
+                        self.storage_face(aligned_frame, aligned_face[0], self.name)
                         self.isStorageFace = False
 
                 if not faces:
@@ -226,9 +210,6 @@ class FaceLogin:
             ret, jpeg = cv2.imencode('.jpg', self.frame)
             return jpeg.tobytes(), face_count, face_exists
 
-            # else:
-            #     ret, jpeg = cv2.imencode('.jpg', self.frame)
-            #     return jpeg.tobytes()
         except Exception as e:
             logging.warning(f"从PC摄像头中获取画面时发生错误: \n{e}")
             return None, 0, False
@@ -249,77 +230,18 @@ def video_feed(request):
     return StreamingHttpResponse(gen(camera), content_type='multipart/x-mixed-replace; boundary=frame')
 
 
-# def turn_camera(request):
-#     try:
-#         if camera.isOpenPcCamera:
-#             camera.video.release()
-#             camera.isOpenPcCamera = False
-#             return JsonResponse({'status': 0, 'message': 'Camera turned successfully'})
-#         elif not camera.isOpenPcCamera:
-#             camera.video = cv2.VideoCapture(0)
-#             camera.isOpenPcCamera = True
-#             return JsonResponse({'status': 1, 'message': 'Camera turned successfully'})
-#     except Exception as e:
-#         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
-
-
-def turn_face(request):
+def turn_camera(request):
     try:
-        if camera.isFaceRecognize:
-            camera.isFaceRecognize = False
-            return JsonResponse({'status': 0, 'message': 'Face detection turned off'})
-        elif not camera.isFaceRecognize:
-            camera.isFaceRecognize = True
-            return JsonResponse({'status': 1, 'message': 'Face detection turned on'})
+        if camera.isOpenPcCamera:
+            camera.cap.release()
+            camera.isOpenPcCamera = False
+            return JsonResponse({'status': 0, 'message': 'Camera turned successfully'})
+        elif not camera.isOpenPcCamera:
+            camera.cap = cv2.VideoCapture(0)
+            camera.isOpenPcCamera = True
+            return JsonResponse({'status': 1, 'message': 'Camera turned successfully'})
     except Exception as e:
-        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
-
-
-def turn_point(request):
-    try:
-        if camera.isOpenPoint:
-            camera.isOpenPoint = False
-            return JsonResponse({'status': 0, 'message': 'Face point turned off'})
-        elif not camera.isOpenPoint:
-            camera.isOpenPoint = True
-            return JsonResponse({'status': 1, 'message': 'Face point turned on'})
-    except Exception as e:
-        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
-
-
-def turn_align(request):
-    try:
-        if camera.isOpenAlign:
-            camera.isOpenAlign = False
-            return JsonResponse({'status': 0, 'message': 'Face align turned off'})
-        elif not camera.isOpenAlign:
-            camera.isOpenAlign = True
-            return JsonResponse({'status': 1, 'message': 'Face align turned on'})
-    except Exception as e:
-        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
-
-
-def turn_hand(request):
-    try:
-        if camera.isHandRecognize:
-            camera.isHandRecognize = False
-            return JsonResponse({'status': 0, 'message': 'Hand detection turned off'})
-        elif not camera.isHandRecognize:
-            camera.isHandRecognize = True
-            return JsonResponse({'status': 1, 'message': 'Hand detection turned on'})
-    except Exception as e:
-        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
-
-
-def turn_hand_point(request):
-    try:
-        if camera.isHandPoint:
-            camera.isHandPoint = False
-            return JsonResponse({'status': 0, 'message': 'Hand point turned off'})
-        elif not camera.isHandPoint:
-            camera.isHandPoint = True
-            return JsonResponse({'status': 1, 'message': 'Hand point turned on'})
-    except Exception as e:
+        logging.error(f"Error turning camera: {e}")  # 增加日志记录
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 
