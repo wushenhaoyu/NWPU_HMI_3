@@ -170,14 +170,17 @@
           <el-button type="primary" style="width: 80%;font-weight: 600;" @click="storageFace">注册人脸</el-button>
         </div>
         <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-          <el-button type="primary" style="width: 80%;font-weight: 600;" @click="openCamera">登录</el-button>
+          <el-button type="primary" style="width: 80%;font-weight: 600;" @click="login">登录</el-button>
         </div>
         <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
           <el-button type="primary" style="width: 80%;font-weight: 600;" @click="openCamera">开启摄像头</el-button>
         </div>
+        <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+          <el-button type="primary" style="width: 80%;font-weight: 600;" @click="redirectToAdmin" >人脸管理</el-button>
+        </div>
       </div>
 
-      
+
       </div><!---->
 
 
@@ -439,13 +442,51 @@ import SystemInformation from './LandingPage/SystemInformation'
     //         console.error(error);
     //       });
     // }
+    login()
+    {
+      this.$http.get('http://127.0.0.1:8000/login_get_frame_info')
+      .then(response => {
+        // 获取人脸信息
+        const faceInfo = response.data;
+        if (faceInfo.status === 0) {
+          this.$message({
+            message: faceInfo.message,
+            type: 'error'
+          });
+          return;
+        }
+        if (faceInfo.status === 1) {
+          if (faceInfo.face_count > 1) {
+            this.$message({
+              message: '确保画面中只有一人',
+              type: 'warning'
+            });
+            return;
+          } else if (faceInfo.face_count === 0) {
+            this.$message({
+              message: '未检测到人脸',
+              type: 'error'
+            });
+            return;
+          } else if (faceInfo.face_exists) {
+            this.$message({
+              message: '认证成功',
+              type: 'info'
+            });
+            this.isLogin = true;
+            return;
+          }else {
+            this.$message({
+              message: '人脸不存在',
+              type: 'error'
+            });
+            return;
+          }
+        }
+      })
+    },
     storageFace() {
       // 检查是否开启人脸对齐
-      if (!this.isAlign) {
-        this.openAlign();
-      }
-
-      // 验证人名是否只包含英文和下划线
       const namePattern = /^[a-zA-Z_]+$/;
       if (!namePattern.test(this.name)) {
           this.$message({
@@ -456,11 +497,11 @@ import SystemInformation from './LandingPage/SystemInformation'
       }
 
       // 发送请求获取当前画面中的人脸信息
-      this.$http.get('http://127.0.0.1:8000/get_frame_info')
+      this.$http.get('http://127.0.0.1:8000/login_get_frame_info')
       .then(response => {
         // 获取人脸信息
         const faceInfo = response.data;
-        if (faceInfo.status === 'error') {
+        if (faceInfo.status === 0) {
           this.$message({
             message: faceInfo.message,
             type: 'error'
