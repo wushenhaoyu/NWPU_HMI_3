@@ -235,6 +235,8 @@ def turn_camera(request):
     except Exception as e:
         logging.error(f"Error turning camera: {e}")  # 增加日志记录
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    
+
 
 
 @csrf_exempt
@@ -273,18 +275,18 @@ def get_frame_info(request):
         frame, face_count, face_exists = camera.get_frame_info()
         if frame is not None:
             response = JsonResponse({
-                'status': 'success',
+                'status': 1,
                 'face_count': face_count,
                 'face_exists': face_exists
             })
             response["Access-Control-Allow-Origin"] = "http://localhost:9080"
             return response
         else:
-            response = JsonResponse({'status': 'error', 'message': '无法获取画面'}, status=500)
+            response = JsonResponse({'status': 0, 'message': '无法获取画面'}, status=500)
             response["Access-Control-Allow-Origin"] = "http://localhost:9080"
             return response
     except Exception as e:
         logging.error(f"获取人脸信息时出错: {e}")
-        response = JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+        response = JsonResponse({'status': 0, 'message': str(e)}, status=500)
         response["Access-Control-Allow-Origin"] = "http://localhost:9080"
         return response

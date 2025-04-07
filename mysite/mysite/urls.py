@@ -25,12 +25,12 @@ urlpatterns = [
     
     # ---------登录部分---------#
     path("turn_camera", login.turn_camera, name="turn"),
-    path("turn_point", login.turn_point, name="turn_point"),
+    #path("turn_point", login.turn_point, name="turn_point"),
     path("storage_face", login.storage_face, name="storage_face"),
     path("login_get_frame_info", login.get_frame_info, name="login_get_frame_info"),
 
     # ---------无人机部分---------#
-    path("turn_hand", login.turn_hand, name="turn_hand"),
-    path("turn_hand_point", login.turn_hand_point, name="turn_hand_point"),
+    #path("turn_hand", login.turn_hand, name="turn_hand"),
+    #path("turn_hand_point", login.turn_hand_point, name="turn_hand_point"),
 
 ]
