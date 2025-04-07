@@ -21,6 +21,33 @@ logging.basicConfig(
 )
 
 
+def compare_face_with_database(face, threshold=0.4):
+    """从数据库中比较人脸
+    :param face: 人脸信息字典，包含 'bbox' 人脸的边界框坐标，
+                 'embedding' 人脸的特征向量, 'kps' 人脸的关键点
+    :param threshold: 特征向量之间距离的阈值
+    :return: 返回识别出的最相似的人脸对象，如果没有找到匹配的，则返回 None
+    """
+    input_embedding = face['embedding']
+    all_faces = Face.objects.all()
+    min_distance = float('inf')
+    recognized_face = None
+
+    for face_entry in all_faces:
+        db_embedding = face_entry.get_feature_vector()
+        distance = cosine(input_embedding, db_embedding)
+        if distance < min_distance:
+            min_distance = distance
+            recognized_face = face_entry
+
+    if recognized_face is not None and min_distance < threshold:
+        # logging.info(f"Recognized face: {recognized_face.name}, Distance: {min_distance}")
+        return recognized_face
+    else:
+        # logging.info(f"No match found! (Minimum distance: {min_distance}, Threshold: {threshold})")
+        return None
+
+
 class FaceLogin:
     """
     应用首页，使用PC摄像头
@@ -88,32 +115,6 @@ class FaceLogin:
             logging.error(f"存储人脸信息时出错： {e}")
             return None
 
-    def compare_face_with_database(self, face, threshold=0.4):
-        """从数据库中比较人脸
-        :param face: 人脸信息字典，包含 'bbox' 人脸的边界框坐标，
-                     'embedding' 人脸的特征向量, 'kps' 人脸的关键点
-        :param threshold: 特征向量之间距离的阈值
-        :return: 返回识别出的最相似的人脸对象，如果没有找到匹配的，则返回 None
-        """
-        input_embedding = face['embedding']
-        all_faces = Face.objects.all()
-        min_distance = float('inf')
-        recognized_face = None
-
-        for face_entry in all_faces:
-            db_embedding = face_entry.get_feature_vector()
-            distance = cosine(input_embedding, db_embedding)
-            if distance < min_distance:
-                min_distance = distance
-                recognized_face = face_entry
-
-        if recognized_face is not None and min_distance < threshold:
-            # logging.info(f"Recognized face: {recognized_face.name}, Distance: {min_distance}")
-            return recognized_face
-        else:
-            # logging.info(f"No match found! (Minimum distance: {min_distance}, Threshold: {threshold})")
-            return None
-
     def get_frame_info(self):
         """打开人脸识别开关，进行人脸登录
         只允许画面存在一个人，多人时不识别
@@ -148,7 +149,7 @@ class FaceLogin:
 
                 face_count = len(faces)
                 if face_count == 1:
-                    recognized_face = self.compare_face_with_database(faces[0])
+                    recognized_face = compare_face_with_database(faces[0])
                     if recognized_face is not None:
                         face_exists = True
                     # 如果需要存储人脸且只检测到一张人脸
@@ -166,7 +167,7 @@ class FaceLogin:
                     # 获取图像中所有在数据库中存在的人脸
                     for index, face in enumerate(faces):
                         try:
-                            recognized_face = self.compare_face_with_database(face)
+                            recognized_face = compare_face_with_database(face)
                             if recognized_face is not None:
                                 face_results.append({
                                     "name": recognized_face.name,
@@ -273,18 +274,18 @@ def get_frame_info(request):
         frame, face_count, face_exists = camera.get_frame_info()
         if frame is not None:
             response = JsonResponse({
-                'status': 'success',
+                'status': 1,
                 'face_count': face_count,
                 'face_exists': face_exists
             })
             response["Access-Control-Allow-Origin"] = "http://localhost:9080"
             return response
         else:
-            response = JsonResponse({'status': 'error', 'message': '无法获取画面'}, status=500)
+            response = JsonResponse({'status': 0, 'message': '无法获取画面'}, status=500)
             response["Access-Control-Allow-Origin"] = "http://localhost:9080"
             return response
     except Exception as e:
         logging.error(f"获取人脸信息时出错: {e}")
-        response = JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+        response = JsonResponse({'status': 0, 'message': str(e)}, status=500)
         response["Access-Control-Allow-Origin"] = "http://localhost:9080"
         return response

@@ -137,7 +137,7 @@
                 </div>
 
 
-              </div>
+        </div>
               <div v-if="value==3">
                 <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;"
                      @click="openHand">
@@ -158,10 +158,19 @@
                   </el-switch>
                 </div>
               </div>
-            </div>
+
+        <div v-if="value==4">
+          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+            <el-button type="primary" style="width: 80%;font-weight: 600;" @click="wifi_connect">连接无人机WIFI(暂时用不到)</el-button>
+
+          </div>
+        </div>
 
 
-            <div v-else>
+        </div>
+
+
+        <div v-else>
         <div style="text-align: center;font-weight: 900;line-height: 10vh;font-size: 25px;">系统登录</div>
         <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
             <el-input style="width: 80%;" v-model="name" placeholder="请输入名字"></el-input>
@@ -228,6 +237,9 @@ import SystemInformation from './LandingPage/SystemInformation'
         }, {
           value: 3,
           label: '手势识别'
+        },{
+          value: 4,
+          label: '无人机'
         }],
         value: 1
       }

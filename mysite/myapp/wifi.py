@@ -2,6 +2,7 @@ import time
 import subprocess
 import re
 import pywifi
+import logging
 from pywifi import const
 
 
@@ -19,7 +20,8 @@ def get_current_ssid():
             if ssid:
                 return ssid
     except Exception as e:
-        print("获取当前SSID失败:", e)
+        logging.info("获取当前SSID失败:", e)
+        # print("获取当前SSID失败:", e)
     return None
 
 
@@ -28,6 +30,8 @@ def is_connected(target_ssid):
     判断当前是否已连接到目标 SSID
     """
     current_ssid = get_current_ssid()
+    logging.info(f"当前SSID: {current_ssid}")
+    # print(f"当前SSID: {current_ssid}")
     return current_ssid == target_ssid
 
 
@@ -40,9 +44,10 @@ def wifi_connect(target_ssid):
 
     while True:
         if is_connected(target_ssid):
-            print(f"已经连接到 {target_ssid}")
+            logging.info(f"已经连接到 {target_ssid}")
             break
-        print(f"未连接到 {target_ssid}，正在尝试连接...")
+        logging.info(f"未连接到 {target_ssid}，正在尝试连接...")
+        # print(f"未连接到 {target_ssid}，正在尝试连接...")
 
         # 扫描网络
         iface.scan()
@@ -51,7 +56,8 @@ def wifi_connect(target_ssid):
         networks = iface.scan_results()
         target_found = any(network.ssid == target_ssid for network in networks)
         if not target_found:
-            print(f"目标 Wi-Fi {target_ssid} 未发现，等待下一次扫描...")
+            logging.info(f"目标 Wi-Fi {target_ssid} 未发现，等待下一次扫描...")
+            # print(f"目标 Wi-Fi {target_ssid} 未发现，等待下一次扫描...")
             time.sleep(10)
             continue
 
@@ -80,14 +86,17 @@ def wifi_connect(target_ssid):
         time.sleep(5)
 
         if iface.status() == const.IFACE_CONNECTED and is_connected(target_ssid):
-            print(f"成功连接到 {target_ssid}")
+            logging.info(f"成功连接到 {target_ssid}")
+            # print(f"成功连接到 {target_ssid}")
             break
         else:
-            print("连接失败，继续尝试...")
+            logging.info("连接失败，继续尝试...")
+            # print("连接失败，继续尝试...")
         time.sleep(5)
 
 
-if __name__ == '__main__':
-    target_ssid = "TELLO-FDDA9E"
-    wifi_connect(target_ssid)
+
+
+target_ssid = "TELLO-FDDA9E"
+wifi_connect(target_ssid)
 
