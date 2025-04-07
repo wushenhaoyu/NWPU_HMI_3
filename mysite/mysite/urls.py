@@ -30,8 +30,8 @@ urlpatterns = [
     path("login_get_frame_info", login.get_frame_info, name="login_get_frame_info"),
 
     # ---------无人机部分---------#
-    # path("turn_hand", login.turn_hand, name="turn_hand"),
-    # path("turn_hand_point", login.turn_hand_point, name="turn_hand_point"),
+    path("turn_hand", login.turn_hand, name="turn_hand"),
+    path("turn_hand_point", login.turn_hand_point, name="turn_hand_point"),
 
     path("drone_video", drone.video_feed, name="drone_video"),
 ]

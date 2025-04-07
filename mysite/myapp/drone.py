@@ -46,16 +46,20 @@ class Drone:
 
         self.isFaceRecognize = True
         self.name = ""
-        # self.embedding = []
 
-        self.tello = Tello()
-        # 连接无人机wifi
-        wifi.wifi_connect(TELLO_SSID)
-        self.tello.connect()
-        # 默认开启视频流
-        self.tello.streamon()
-        self.frame = self.tello.get_frame_read().frame
-        logging.info(f"drone battery: {self.tello.get_battery()}")
+
+        self.cap = cv2.VideoCapture(0)
+        self.frame = None
+
+        self.label = ""  # 手势类别
+        # self.tello = Tello()
+        # # 连接无人机wifi
+        # wifi.wifi_connect(TELLO_SSID)
+        # self.tello.connect()
+        # # 默认开启视频流
+        # self.tello.streamon()
+        # self.frame = self.tello.get_frame_read().frame
+        # logging.info(f"drone battery: {self.tello.get_battery()}")
 
         self.action = LAND #控制飞行状态
         self.action_cache1 = None
@@ -98,8 +102,17 @@ class Drone:
             3.人脸是否在数据库中存在(只有一个人时)
         """
         try:
-            frame = self.tello.get_frame_read().frame
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            # frame = self.tello.get_frame_read().frame
+            # frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            ret, frame = self.cap.read()
+            if not ret:
+                logging.warning("无法从PC摄像头中获取画面，尝试重新打开摄像头")
+                self.cap.release()
+                self.cap = cv2.VideoCapture(0)
+                ret, frame = self.cap.read()
+                if not ret:
+                    logging.error("重新打开摄像头后仍然无法获取画面")
+                    return None
             self.frame = cv2.flip(frame, 1)
 
             ih, iw, _ = self.frame.shape
@@ -136,6 +149,12 @@ class Drone:
                         # 以识别出的第一个人为准
                         name = face_results[0]["name"]
                         bbox = face_results[0]["bbox"]
+                        # 脸
+                        cv2.putText(self.frame, name, (int(bbox[0]), int(bbox[1]) - 10),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+                        cv2.rectangle(self.frame, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])),
+                                      (0, 255, 0), 2)
+
                         x1, y1 = int(bbox[0]), int(bbox[1])
                         x2, y2 = int(bbox[2]), int(bbox[3])
                         w = x2 - x1
@@ -149,14 +168,26 @@ class Drone:
                         # ROI边界约束
                         roi_x = max(0, min(roi_x, iw - roi_w))
                         roi_y = max(0, min(roi_y, ih - roi_h))
-                        # 脸
-                        cv2.putText(self.frame, name, (int(bbox[0]), int(bbox[1]) - 10),
-                                    cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
-                        cv2.rectangle(self.frame, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])),
-                                      (0, 255, 0), 2)
+
                         # 手
                         cv2.rectangle(self.frame, (roi_x, roi_y), (roi_x + roi_w, roi_y + roi_h),
                                       (255, 0, 0), 2)
+
+                        detect_frame = self.frame[roi_y:roi_y + roi_h, roi_x:roi_x + roi_w]
+                        detect_hands = self.model(detect_frame, stream=True)
+                        for detection in detect_hands:
+                            for box in detection.boxes:
+                                # 获取边界框坐标
+                                # x1, y1, x2, y2 = map(int, box.xyxy[0])  # 转换为整数
+                                conf = box.conf[0]  # 置信度
+                                cls = int(box.cls[0])  # 类别索引
+                                self.label = self.model.names[cls]
+                                ges_info = f"{self.label} {conf:.2f}"  # 获取类别名称和置信度
+
+                                # 绘制边界框和类别
+                                # cv2.rectangle(self.frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                                cv2.putText(self.frame, ges_info, (roi_x, roi_y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
+                                            (0, 255, 0), 2)
 
                         # 其他人统一标红
                         for face in face_results[1:]:
@@ -244,8 +275,9 @@ class Drone:
         
 
     
-        
-        
+
+
+    # def
 
 
 
@@ -257,7 +289,7 @@ def gen(camera):
     while True:
         # frame, face_count, face_exists = camera.get_frame_info()
         frame = camera.get_frame_info()
-        # frame, face_count, face_exists = camera.get_frame_info()
+
         if frame is not None:
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
