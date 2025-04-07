@@ -150,8 +150,8 @@ class Drone:
 
 
 
-drone = Drone()
-drone.get_frame_info()
+# drone = Drone()
+# drone.get_frame_info()
 
 def gen(camera):
     while True:

@@ -97,6 +97,6 @@ def wifi_connect(target_ssid):
 
 
 
-target_ssid = "TELLO-FDDA9E"
-wifi_connect(target_ssid)
+# target_ssid = "TELLO-FDDA9E"
+# wifi_connect(target_ssid)
 
