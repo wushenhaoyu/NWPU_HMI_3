@@ -232,9 +232,6 @@ import SystemInformation from './LandingPage/SystemInformation'
           value: 1,
           label: '人脸操作'
         }, {
-          value: 2,
-          label: '活体检测'
-        }, {
           value: 3,
           label: '手势识别'
         },{

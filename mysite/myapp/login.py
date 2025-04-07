@@ -237,7 +237,17 @@ def turn_camera(request):
         logging.error(f"Error turning camera: {e}")  # 增加日志记录
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
     
-
+def turn_off_camera(request):
+    try:
+        if camera.isOpenPcCamera:
+            camera.cap.release()
+            camera.isOpenPcCamera = False
+            return JsonResponse({'status': 1, 'message': 'Camera turned off successfully'})
+        else:
+            return JsonResponse({'status': 0, 'message': 'Camera is already off'})
+    except Exception as e:
+        logging.error(f"Error turning off camera: {e}")  # 增加日志记录
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 
 @csrf_exempt
