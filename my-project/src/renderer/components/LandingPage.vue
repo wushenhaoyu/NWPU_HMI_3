@@ -182,7 +182,7 @@
         <div v-if="value==7">
           
           <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-            <el-button type="primary" style="width: 80%;font-weight: 600;" @click="wifi_connect">连接无人机WIFI(暂时用不到)</el-button>
+            <el-button type="primary" style="width: 80%;font-weight: 600;" @click="wifiConnect"  v-loading.fullscreen.lock="fullscreenLoading">连接无人机WIFI(暂时用不到)</el-button>
           </div>
         </div>
 
@@ -229,6 +229,7 @@ import SystemInformation from './LandingPage/SystemInformation'
     data () {
       return {
         //
+        fullscreenLoading: false,
         isLogin: true,
         EyeCount : 0,
         MouthCount : 0,
@@ -306,6 +307,30 @@ import SystemInformation from './LandingPage/SystemInformation'
       //
     },
     methods: {
+
+      wifiConnect()
+      {
+        this.fullscreenLoading = true;
+        this.$http.get('http://127.0.0.1:8000/wifi_connect')
+          .then(response => {
+            if (response.data.status == 1) {
+              this.$message({
+                message: '连接成功',
+                type: 'success'
+              });
+            } else {
+              this.$message({
+                message: '连接失败',
+                type: 'error'
+              });
+            }
+            this.fullscreenLoading = false;
+          })
+          .catch(error => {
+            console.error(error);
+            this.fullscreenLoading = false;
+          })
+      },
 
       recordVoice()
       {
