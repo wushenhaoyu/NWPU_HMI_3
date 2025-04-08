@@ -65,9 +65,9 @@ def wifi_connect(target_ssid, max_retries=3):
         if not target_found:
             logging.info(f"目标 Wi-Fi {target_ssid} 未发现，等待下一次扫描...")
             # print(f"目标 Wi-Fi {target_ssid} 未发现，等待下一次扫描...")
-            # time.sleep(10)
-            return JsonResponse({'status': 0, 'message': f"目标 Wi-Fi {target_ssid} 未发现，等待下一次扫描..."})
-            # continue
+            time.sleep(5)
+            retry_count += 1
+            continue
 
         try:
             # 断开当前网络
