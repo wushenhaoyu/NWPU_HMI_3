@@ -17,7 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
-from myapp import login,drone
+from myapp import login,drone,voice
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -29,6 +29,10 @@ urlpatterns = [
     path("storage_face", login.storage_face, name="storage_face"),
     path("login_get_frame_info", login.get_frame_info, name="login_get_frame_info"),
 
+    # ----------电脑控制部分---------#
+
+    path("turn_voice",voice.turn_voice, name="turn_voice"),
+    path("record_voice", voice.record_voice, name="record_voice"),
     # ---------无人机部分---------#
     path("turn_hand", login.turn_hand, name="turn_hand"),
     # path("turn_hand_point", login.turn_hand_point, name="turn_hand_point"),

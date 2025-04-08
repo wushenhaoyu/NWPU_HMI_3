@@ -159,10 +159,30 @@
                 </div>
               </div>
 
+
         <div v-if="value==4">
+          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;"
+                     @click="openVoice">
+                  <div style="width: 40%;text-align: center;">使能语音控制</div>
+                  <el-switch
+                      v-model="isVoice"
+                      active-text="开启"
+                      inactive-text="关闭">
+                  </el-switch>
+                </div>
+          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;font-size: 4vh;"> <div style="width: 40%;text-align: center;">当前指令</div>{{ getVoiceAction }}</div>
+          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+
+              <el-button type="primary" style="width: 80%;font-weight: 600;" @click="recordVoice" :disabled="!isVoice">开始录音</el-button>
+           
+
+          </div>
+        </div>
+
+        <div v-if="value==7">
+          
           <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
             <el-button type="primary" style="width: 80%;font-weight: 600;" @click="wifi_connect">连接无人机WIFI(暂时用不到)</el-button>
-
           </div>
         </div>
 
@@ -209,12 +229,15 @@ import SystemInformation from './LandingPage/SystemInformation'
     data () {
       return {
         //
-        isLogin: false,
+        isLogin: true,
         EyeCount : 0,
         MouthCount : 0,
         HeadLeftCount : 0,
         HeadRightCount : 0,
         HeadShakeCount : 0,
+        voiceAction: -1,
+        isRecordingVoice: false,
+        isVoice:false,
         isShowImg:false,
         isFace:false,
         isPoint:false,
@@ -233,9 +256,22 @@ import SystemInformation from './LandingPage/SystemInformation'
           label: '人脸操作'
         }, {
           value: 3,
-          label: '手势识别'
-        },{
+          label: '手势控制'
+        },
+        {
           value: 4,
+          label: '语音控制'
+        },
+        {
+          value: 5,
+          label: '键盘控制'
+        },
+        {
+          value: 6,
+          label: '飞机参数'
+        },
+        {
+          value: 7,
           label: '无人机'
         }],
         value: 1
@@ -248,12 +284,74 @@ import SystemInformation from './LandingPage/SystemInformation'
       //
       imgurl(){
         return `${this.imgurl_}?t=${this.timestamp}`;
+      },
+      getVoiceAction(){
+        if(this.voiceAction == 0){
+          return "起飞"
+      }else if(this.voiceAction == 1){
+          return "降落"
+      }else if(this.voiceAction == 2){
+          return "前进"
+      }else if(this.voiceAction == 3){
+          return "后退"
+        }else if(this.voiceAction == 4){
+          return "降落"
+        }else{
+          return "无命令"
+        }
       }
+
     },
     watch: {
       //
     },
     methods: {
+
+      recordVoice()
+      {
+        if(this.isRecordingVoice) {
+          this.$message({
+            message: '正在录音，请稍后',
+            type: 'warning'
+          });
+          return;
+        }else{
+          this.isRecordingVoice = true;
+          this.$http.get('http://127.0.0.1:8000/record_voice')
+        .then(response => {
+            if (response.data.status == 1) {
+              this.$message({
+                message: '识别成功',
+                type: 'success'
+              });
+              this.voiceAction = response.data.data;
+            } else {
+              this.$message({
+                message: '识别失败',
+                type: 'error'
+              });
+            }
+
+            this.isRecordingVoice = false;
+            
+          })
+
+        }
+
+      },
+
+      openVoice(){
+        this.$http.get('http://127.0.0.1:8000/turn_voice')
+        .then(response => {
+            if (response.data.status == 1) {
+              this.$data.isVoice = true;
+            } else {
+              this.$data.isVoice = false;
+            }
+            console.log(response.data, this.isVoice);
+          })
+
+      },
 
       redirectToAdmin() {
         window.open("http://127.0.0.1:8000/admin/", "_blank");
