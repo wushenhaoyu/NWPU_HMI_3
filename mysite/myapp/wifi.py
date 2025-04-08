@@ -4,7 +4,7 @@ import re
 import pywifi
 import logging
 from pywifi import const
-
+from django.http import JsonResponse, StreamingHttpResponse
 
 def get_current_ssid():
     """
@@ -35,35 +35,47 @@ def is_connected(target_ssid):
     return current_ssid == target_ssid
 
 
-def wifi_connect(target_ssid):
+def wifi_connect(target_ssid, max_retries=3):
     """
     如果当前未连接到目标Wi-Fi，则持续扫描并尝试连接，直到连接成功。
     """
     wifi = pywifi.PyWiFi()
     iface = wifi.interfaces()[0]
 
-    while True:
+    retry_count = 0
+    while retry_count < max_retries:
         if is_connected(target_ssid):
             logging.info(f"已经连接到 {target_ssid}")
-            break
+            return JsonResponse({'status': 1, 'message': f'已连接目标WiFi: {target_ssid}'})
+            # break
+
         logging.info(f"未连接到 {target_ssid}，正在尝试连接...")
         # print(f"未连接到 {target_ssid}，正在尝试连接...")
 
-        # 扫描网络
-        iface.scan()
-        time.sleep(2)
+        try:
+            # 扫描网络
+            iface.scan()
+            time.sleep(2)
+            networks = iface.scan_results()
+        except Exception as e:
+            logging.error(f"扫描网络失败: {e}")
+            return JsonResponse({'status': 0, 'message': f"扫描网络失败"})
 
-        networks = iface.scan_results()
         target_found = any(network.ssid == target_ssid for network in networks)
         if not target_found:
             logging.info(f"目标 Wi-Fi {target_ssid} 未发现，等待下一次扫描...")
             # print(f"目标 Wi-Fi {target_ssid} 未发现，等待下一次扫描...")
-            time.sleep(10)
-            continue
+            # time.sleep(10)
+            return JsonResponse({'status': 0, 'message': f"目标 Wi-Fi {target_ssid} 未发现，等待下一次扫描..."})
+            # continue
 
-        # 断开当前网络
-        iface.disconnect()
-        time.sleep(2)
+        try:
+            # 断开当前网络
+            iface.disconnect()
+            time.sleep(2)
+        except Exception as e:
+            logging.error(f"断开当前网络失败: {e}")
+            return JsonResponse({'status': 0, 'message': "断开当前网络失败"})
 
         # 检查是否已有目标 Wi-Fi 的配置
         target_profile = None
@@ -79,20 +91,34 @@ def wifi_connect(target_ssid):
             profile.auth = const.AUTH_ALG_OPEN
             profile.hidden = False
             # 添加新配置
-            target_profile = iface.add_network_profile(profile)
+            try:
+                target_profile = iface.add_network_profile(profile)
+            except Exception as e:
+                logging.error(f"添加新配置失败: {e}")
+                return JsonResponse({'status': 0, 'message': "添加新配置失败"})
 
-        # 发起连接
-        iface.connect(target_profile)
-        time.sleep(5)
+        try:
+            # 发起连接
+            iface.connect(target_profile)
+            time.sleep(5)
+        except Exception as e:
+            logging.error(f"连接到 {target_ssid} 时发生错误: {e}")
+            return JsonResponse({'status': 0, 'message': f"连接到 {target_ssid} 失败"})
 
         if iface.status() == const.IFACE_CONNECTED and is_connected(target_ssid):
             logging.info(f"成功连接到 {target_ssid}")
             # print(f"成功连接到 {target_ssid}")
-            break
+            return JsonResponse({'status': 1, 'message': f'成功连接到目标WiFi: {target_ssid}'})
+            # break
         else:
             logging.info("连接失败，继续尝试...")
             # print("连接失败，继续尝试...")
-        time.sleep(5)
+            retry_count += 1
+
+    logging.error(f"连接到 {target_ssid} 失败，达到最大重试次数")
+    return JsonResponse({'status': 0, 'message': f"连接到 {target_ssid} 失败，达到最大重试次数"})
+
+        # time.sleep(5)
 
 
 

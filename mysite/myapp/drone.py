@@ -325,3 +325,13 @@ def get_current_state(request):
         logging.error(f"Error getting current state: {e}")  # 增加日志记录
         return JsonResponse({'status': 0 , 'message': str(e)}, status=500)
 
+
+def get_wifi_state(request):
+    try:
+        response = wifi.wifi_connect(TELLO_SSID)
+
+        return response
+
+    except Exception as e:
+        logging.error(f"Error getting wifi state: {e}")  # 增加日志记录
+        return JsonResponse({'status': 0, 'message': str(e)}, status=500)
