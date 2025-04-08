@@ -5,12 +5,12 @@
     <div style="display: flex;">    
       <div style="width: 70%;">
         <div style="height: 100%;width: 100%;">
-          <div style="text-align: center;font-size: larger;font-weight: 900;color: black;background-color: #e9eef3;">摄像头画面</div>
+          <div style="text-align: center;font-size: larger;font-weight: 900;color: black;background-color: #e9eef3; height: 5vh;line-height: 5vh;">摄像头画面</div>
             <div v-if="isShowImg">            
               <img   :src="imgurl" alt="electron-vue" >
             </div>
             <div v-else>
-              <img  style="height: 100%;width: 95%;" src="~@/assets/bg.png" alt="electron-vue" >
+              <img  style="height: 60%;width: 95%;object-fit: contain;" src="~@/assets/bg.png" alt="electron-vue" >
             </div>
           </div>
 
@@ -30,16 +30,10 @@
           </el-select>
         </div>
 
+                   <!---------------------------------------------------------->
+
         <div v-if="value==1">
-          <!--<div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;" @click="openFace" >
-          <div style="width: 40%;text-align: center;">人脸检测</div>
-          <el-switch
-          v-model="isFace"
-          active-text="开启"
-          inactive-text="关闭"
-          >
-          </el-switch>
-          </div>-->
+
 
                 <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;"
                      @click="openPoint">
@@ -51,15 +45,6 @@
                   </el-switch>
                 </div>
 
-          <!--<div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;" @click="openAlign" >
-            <div style="width: 40%;text-align: center;">人脸对齐</div>
-          <el-switch
-          v-model="isAlign"
-          active-text="开启"
-          inactive-text="关闭"
-          >
-          </el-switch>
-          </div>-->
 
           <div style="height: 20vh;"></div>
           <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
@@ -75,6 +60,9 @@
           <el-button type="primary" style="width: 80%;font-weight: 600;" @click="redirectToAdmin" >人脸管理</el-button>
         </div>
         </div>
+
+
+                   <!---------------------------------------------------------->
         <div v-if="value==2">
           <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;" @click="openEye" >
           <div style="width: 40%;text-align: center;">眨眼检测</div>
@@ -136,7 +124,7 @@
                   <el-button type="primary" style="width: 80%;font-weight: 600;" @click="reset_count">重置计数</el-button>
                 </div>
 
-
+           <!---------------------------------------------------------->
         </div>
               <div v-if="value==3">
                 <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;"
@@ -157,9 +145,19 @@
                       inactive-text="关闭">
                   </el-switch>
                 </div>
+
+                <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;"
+                     @click="openPoint">
+                  <div style="width: 40%;text-align: center;">手势控制</div>
+                  <el-switch
+                      v-model="isPoint"
+                      active-text="开启"
+                      inactive-text="关闭">
+                  </el-switch>
+                </div>
               </div>
 
-
+              <!---------------------------------------------------------->
         <div v-if="value==4">
           <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;"
                      @click="openVoice">
@@ -189,7 +187,7 @@
 
           </div>
         </div>
-
+           <!---------------------------------------------------------->
 
         <div v-if="value==5">
                 <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
@@ -212,7 +210,7 @@
                   <el-button type="primary" style="width: 35%;font-weight: 600;" @click="recordVoice" >右移</el-button>
                 </div>
 
-                <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+                <!--<div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
                   <el-button type="primary" style="width: 35%;font-weight: 600;" @click="recordVoice" >前翻</el-button>
                   <el-button type="primary" style="width: 35%;font-weight: 600;" @click="recordVoice" >后翻</el-button>
                 </div>
@@ -220,21 +218,83 @@
                 <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
                   <el-button type="primary" style="width: 35%;font-weight: 600;" @click="recordVoice" >上翻</el-button>
                   <el-button type="primary" style="width: 35%;font-weight: 600;" @click="recordVoice" >下翻</el-button>
-                </div>
+                </div>-->
 
                 <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
                   <el-button type="primary" style="width: 35%;font-weight: 600;" @click="recordVoice" >左旋</el-button>
                   <el-button type="primary" style="width: 35%;font-weight: 600;" @click="recordVoice" >右旋</el-button>
                 </div>
         </div>
+           <!---------------------------------------------------------->
+           <div v-if="value==6">
+            <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;line-height: 7vh;font-size: 2.5vh;"> 
+              <div style="width: 35%;text-align: center;">移动距离cm</div><el-input-number v-model="move_distance"  :min="10" :max="20" label="描述文字"></el-input-number>
+            </div>
 
+            <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;line-height: 7vh;font-size: 2.5vh;"> 
+              <div style="width: 35%;text-align: center;">移动速度cm/s</div><el-input-number v-model="move_speed"  :min="10" :max="20" label="描述文字"></el-input-number>
+            </div>
+
+            <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;line-height: 7vh;font-size: 2.5vh;"> 
+              <div style="width: 30%;text-align: center;">旋转角度°</div><el-input-number v-model="rotation_angle"  :min="10" :max="20" label="描述文字"></el-input-number>
+            </div>
+
+            <div style="height: 20vh;"></div>
+
+            <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+            <el-button type="primary" style="width: 80%;font-weight: 600;" @click="recordVoice" >设置</el-button>
+            </div>
+
+
+           </div>
+           <!---------------------------------------------------------->
         <div v-if="value==7">
           
           <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-            <el-button type="primary" style="width: 80%;font-weight: 600;" @click="wifiConnect"  v-loading.fullscreen.lock="fullscreenLoading">连接无人机WIFI(暂时用不到)</el-button>
+            <div style="width: 40%;text-align: center;">电池电量：</div>
+            <div style="width: 32%;text-align: center;">{{currentState.bat}}%</div>
           </div>
-        </div>
+          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+            <div style="width: 40%;text-align: center;">飞行高度：</div>
+            <div style="width: 32%;text-align: center;">{{currentState.h}}cm</div>
+          </div>
 
+          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+            <div style="width: 40%;text-align: center;">飞行时间：</div>
+            <div style="width: 32%;text-align: center;">{{currentState.time}}s</div>
+          </div>
+
+          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+            <div style="width: 40%;text-align: center;">信号强度：</div>
+            <div style="width: 32%;text-align: center;">{{currentState.wifi}}s</div>
+          </div>
+
+          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+            <div style="width: 40%;text-align: center;">加速度：</div>
+            <div style="width: 32%;text-align: center;">({{currentState.agx}},{{currentState.agy}},{{currentState.agz}})</div>
+          </div>
+
+          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+            <div style="width: 40%;text-align: center;">速度：</div>
+            <div style="width: 32%;text-align: center;">({{currentState.vgx}},{{currentState.vgy}},{{currentState.vgz}})</div>
+          </div>
+
+          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+            <div style="width: 40%;text-align: center;">航向角</div>
+            <div style="width: 32%;text-align: center;">{{currentState.pitch}}°</div>
+          </div>
+
+          <div style="height: 10vh;"></div>
+
+
+
+
+          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+            <el-button type="primary" style="width: 80%;font-weight: 600;" @click="wifiConnect"  v-loading.fullscreen.lock="fullscreenLoading">连接无人机</el-button>
+          </div>
+          
+          
+        </div>
 
         </div>
 
@@ -301,9 +361,32 @@ import SystemInformation from './LandingPage/SystemInformation'
         progress: 0,
         progressStatus: 'success',
         timer: null,
+        CurrentStateTimer: null,
         name:'',
         imgurl_:'http://localhost:8000/video',
         timestamp: Date.now(),
+        move_distance: 10,
+        move_speed: 10,
+        rotation_angle: 10,
+        currentState:{
+          pitch: 0,  
+          roll: 0,   
+          yaw: 0,    
+          vgx: 0,    
+          vgy: 0,    
+          vgz: 0,    
+          templ: 0,  
+          temph: 0,  
+          tof: 0,    
+          h: 0,      
+          bat: 100,  
+          baro: 0.0, 
+          time: 0,   
+          agx: 0.0,  
+          agy: 0.0,  
+          agz: 0.0,  
+          wifi: 0 , 
+        },
         options: [{
           value: 1,
           label: '人脸操作'
@@ -321,11 +404,11 @@ import SystemInformation from './LandingPage/SystemInformation'
         },
         {
           value: 6,
-          label: '飞机参数'
+          label: '飞行参数'
         },
         {
           value: 7,
-          label: '无人机'
+          label: '无人机状态'
         }],
         value: 1
       }
@@ -359,28 +442,58 @@ import SystemInformation from './LandingPage/SystemInformation'
       //
     },
     methods: {
-
+      getCurrentState(){
+        this.data.CurrentStateTimer = setInterval(() => {
+          this.$http.get('http://127.0.0.1:8000/get_current_state').then(response => {
+            if (response.data.status == 1) {
+              this.currentState.agx = response.data.tello_state.agx;
+              this.currentState.agy = response.data.tello_state.agy;
+              this.currentState.agz = response.data.tello_state.agz;
+              this.currentState.bat = response.data.tello_state.bat;
+              this.currentState.baro = response.data.tello_state.baro;
+              this.currentState.h = response.data.tello_state.h;
+              this.currentState.temph = response.data.tello_state.temph;
+              this.currentState.templ = response.data.tello_state.templ;
+              this.currentState.tof = response.data.tello_state.tof;
+              this.currentState.time = response.data.tello_state.time;
+              this.currentState.vgx = response.data.tello_state.vgx;
+              this.currentState.vgy = response.data.tello_state.vgy;
+              this.currentState.vgz = response.data.tello_state.vgz;
+              this.currentState.pitch = response.data.tello_state.pitch;
+              this.currentState.roll = response.data.tello_state.roll;
+              this.currentState.yaw = response.data.tello_state.yaw;
+              this.currentState.wifi = response.data.tello_state.wifi;
+            } else {
+              this.$message({
+                message: '获取状态参数失败',
+                type: 'error'
+              });
+            }
+          })
+        }, 250);
+      },
       wifiConnect()
       {
         this.fullscreenLoading = true;
         this.$http.get('http://127.0.0.1:8000/wifi_connect')
           .then(response => {
             if (response.data.status == 1) {
+              this.fullscreenLoading = false;
               this.$message({
                 message: '连接成功',
                 type: 'success'
               });
+
             } else {
               this.$message({
                 message: '连接失败',
                 type: 'error'
               });
             }
-            this.fullscreenLoading = false;
           })
           .catch(error => {
-            console.error(error);
             this.fullscreenLoading = false;
+            console.error(error);
           })
       },
 
