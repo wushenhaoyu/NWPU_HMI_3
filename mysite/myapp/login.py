@@ -12,19 +12,14 @@ from myapp.models import Face
 import re
 import time
 import logging
-from ultralytics import YOLO
-import mediapipe as mp
+from myapp.hand_process import *
 
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',  # 定义日志格式
     datefmt='%Y-%m-%d %H:%M:%S'  # 定义时间格式
 )
-# 调整ROI参数（右侧位置）
-ROI_WIDTH_RATIO = 1.8
-ROI_HEIGHT_RATIO = 1.5
-ROI_OFFSET_X_RATIO = 1.2  # 正数表示右侧偏移
-ROI_OFFSET_Y_RATIO = 0
+
 
 def compare_face_with_database(face, threshold=0.4):
     """从数据库中比较人脸
@@ -53,26 +48,6 @@ def compare_face_with_database(face, threshold=0.4):
         return None
 
 
-def get_hand_roi(frame, bbox):
-    iw, ih = frame.shape[:2]
-    x1, y1 = int(bbox[0]), int(bbox[1])
-    x2, y2 = int(bbox[2]), int(bbox[3])
-    w = x2 - x1
-    h = y2 - y1
-    # 调整ROI到人脸右侧
-    roi_x = x2 + int(w * ROI_OFFSET_X_RATIO)  # 右侧偏移使用加法
-    roi_y = y2 + int(h * ROI_OFFSET_Y_RATIO)
-    roi_w = int(w * ROI_WIDTH_RATIO)
-    roi_h = int(h * ROI_HEIGHT_RATIO)
-
-    # ROI边界约束
-    roi_x = max(0, min(roi_x, iw - roi_w))
-    roi_y = max(0, min(roi_y, ih - roi_h))
-
-    return roi_x, roi_y, roi_w, roi_h
-
-
-
 class FaceLogin:
     """
     应用首页，使用PC摄像头
@@ -88,7 +63,7 @@ class FaceLogin:
                                 providers=['CUDAExecutionProvider', 'CPUExecutionProvider'])
         self.app.prepare(ctx_id=0 if torch.cuda.is_available() else -1, det_size=(640, 640))
 
-        self.model = YOLO(os.path.join(os.path.dirname(__file__), 'best.pt'))
+        # self.model = YOLO(os.path.join(os.path.dirname(__file__), 'best.pt'))
         self.mp_hands = mp.solutions.hands
         self.hands = self.mp_hands.Hands(static_image_mode=False, max_num_hands=2, min_detection_confidence=0.7,
                                          min_tracking_confidence=0.5)
@@ -97,10 +72,10 @@ class FaceLogin:
         self.isOpenPcCamera = False  # 默认开启摄像头
         self.isFaceRecognize = True  # True：开摄像头同时人脸检测
         self.isOpenAlign = False  # 对齐
-        self.firstRecognizedPeople = None  # 是否已经识别过人脸，用于存在多人脸的识别情况
+        # self.firstRecognizedPeople = None  # 是否已经识别过人脸，用于存在多人脸的识别情况
 
         self.isHandRecognize = False
-        self.isHandPoint = False
+        # self.isHandPoint = False
 
         self.isStorageFace = False
         self.name = ""
@@ -168,7 +143,7 @@ class FaceLogin:
                 if not ret:
                     logging.error("重新打开摄像头后仍然无法获取画面")
                     return None
-            self.frame = frame
+            self.frame = cv2.flip(frame,1)
 
             face_count = 0
             face_exists = False
@@ -224,66 +199,9 @@ class FaceLogin:
                                     cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
                         cv2.rectangle(self.frame, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])),
                                       (0, 255, 0), 2)
+
                         if self.isHandRecognize:
-                            roi_x, roi_y, roi_w, roi_h = get_hand_roi(self.frame, bbox)
-                            # 手
-                            cv2.rectangle(self.frame, (roi_x, roi_y), (roi_x + roi_w, roi_y + roi_h),
-                                          (255, 0, 0), 2)
-
-                            detect_frame = self.frame[roi_y:roi_y + roi_h, roi_x:roi_x + roi_w]
-                            detect_hands = self.model(detect_frame, stream=True)
-                            for detection in detect_hands:
-                                for box in detection.boxes:
-                                    # 获取边界框坐标
-                                    # x1, y1, x2, y2 = map(int, box.xyxy[0])  # 转换为整数
-                                    conf = box.conf[0]  # 置信度
-                                    cls = int(box.cls[0])  # 类别索引
-                                    label = self.model.names[cls]
-                                    ges_info = f"{label} {conf:.2f}"  # 获取类别名称和置信度
-
-                                    # 绘制边界框和类别
-                                    # cv2.rectangle(self.frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                                    cv2.putText(self.frame, ges_info, (roi_x, roi_y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
-                                                (0, 255, 0), 2)
-                        if self.isHandPoint:
-                            roi_x, roi_y, roi_w, roi_h = get_hand_roi(self.frame, bbox)
-                            roi_area = self.frame[roi_y:roi_y + roi_h, roi_x:roi_x + roi_w]
-                            # if roi_area.size != 0:
-                            # roi_rgb = cv2.cvtColor(roi_area, cv2.COLOR_BGR2RGB)
-                            hand_results = self.hands.process(roi_area)
-
-                            if hand_results.multi_hand_landmarks:
-                            #     for hand_landmarks in hand_results.multi_hand_landmarks:
-                            #         self.mp_drawing.draw_landmarks(
-                            #             self.frame, hand_landmarks, self.mp_hands.HAND_CONNECTIONS,
-                            #             self.mp_drawing.DrawingSpec(color=(121, 22, 76), thickness=2, circle_radius=4),
-                            #             self.mp_drawing.DrawingSpec(color=(250, 44, 250), thickness=2, circle_radius=2)
-                            #         )
-                                for idx, hand_landmarks in enumerate(hand_results.multi_hand_landmarks):
-                                    # 获取手部属性
-                                    handedness = hand_results.multi_handedness[idx]
-                                    hand_label = handedness.classification[0].label
-
-                                    # 仅处理右手检测结果
-                                    # if hand_label == ("Right" if ROI_OFFSET_X_RATIO > 0 else "Left"):
-                                    # 转换坐标到原始图像
-                                    adjusted_landmarks = [(roi_x + int(lm.x * roi_w),
-                                                           roi_y + int(lm.y * roi_h))
-                                                          for lm in hand_landmarks.landmark]
-
-                                    # 绘制右手关键点（使用自定义颜色）
-                                    for point in adjusted_landmarks:
-                                        cv2.circle(self.frame, point, 4, (0, 0, 255), -1)
-
-                                    # 绘制骨骼连接线（蓝色）
-                                    connections = self.mp_hands.HAND_CONNECTIONS
-                                    for connection in connections:
-                                        start = connection[0]
-                                        end = connection[1]
-                                        cv2.line(self.frame,
-                                                 adjusted_landmarks[start],
-                                                 adjusted_landmarks[end],
-                                                 (255, 255, 255), 2)
+                            self.frame = hand_recognize(self.frame, bbox)
 
                         # 其他人统一标红
                         for face in face_results[1:]:
@@ -351,30 +269,6 @@ def turn_hand(request):
             camera.isHandRecognize = True
             return JsonResponse({'status': 1, 'message': 'Hand detection turned on'})
     except Exception as e:
-        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
-
-
-def turn_hand_point(request):
-    try:
-        if camera.isHandPoint:
-            camera.isHandPoint = False
-            return JsonResponse({'status': 0, 'message': 'Hand point turned off'})
-        elif not camera.isHandPoint:
-            camera.isHandPoint = True
-            return JsonResponse({'status': 1, 'message': 'Hand point turned on'})
-    except Exception as e:
-        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
-
-def turn_off_camera(request):
-    try:
-        if camera.isOpenPcCamera:
-            camera.cap.release()
-            camera.isOpenPcCamera = False
-            return JsonResponse({'status': 1, 'message': 'Camera turned off successfully'})
-        else:
-            return JsonResponse({'status': 0, 'message': 'Camera is already off'})
-    except Exception as e:
-        logging.error(f"Error turning off camera: {e}")  # 增加日志记录
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 
