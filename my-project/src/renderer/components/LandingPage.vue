@@ -170,13 +170,62 @@
                       inactive-text="关闭">
                   </el-switch>
                 </div>
+
+
+
           <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;font-size: 4vh;"> <div style="width: 40%;text-align: center;">当前指令</div>{{ getVoiceAction }}</div>
+          
+          <div style="height: 35vh;"></div>
+          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: center;"
+                     >
+                     <el-progress style="width: 80%;" :percentage="progress" :status="progressStatus"  :text-inside="true" :stroke-width="26"/>
+                </div>
+
+  
           <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
 
               <el-button type="primary" style="width: 80%;font-weight: 600;" @click="recordVoice" :disabled="!isVoice">开始录音</el-button>
            
 
           </div>
+        </div>
+
+
+        <div v-if="value==5">
+                <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="recordVoice" >起飞</el-button>
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="recordVoice" >降落</el-button>
+                </div>
+
+                <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="recordVoice" >上升</el-button>
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="recordVoice" >下降</el-button>
+                </div>
+          
+                <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="recordVoice" >前进</el-button>
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="recordVoice" >后退</el-button>
+                </div>
+
+                <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="recordVoice" >左移</el-button>
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="recordVoice" >右移</el-button>
+                </div>
+
+                <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="recordVoice" >前翻</el-button>
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="recordVoice" >后翻</el-button>
+                </div>
+
+                <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="recordVoice" >上翻</el-button>
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="recordVoice" >下翻</el-button>
+                </div>
+
+                <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="recordVoice" >左旋</el-button>
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="recordVoice" >右旋</el-button>
+                </div>
         </div>
 
         <div v-if="value==7">
@@ -249,6 +298,9 @@ import SystemInformation from './LandingPage/SystemInformation'
         isGettingCount:false,
         isHand:false,
         isHandPoint:false,
+        progress: 0,
+        progressStatus: 'success',
+        timer: null,
         name:'',
         imgurl_:'http://localhost:8000/video',
         timestamp: Date.now(),
@@ -332,6 +384,23 @@ import SystemInformation from './LandingPage/SystemInformation'
           })
       },
 
+      startProgress() {
+      this.progress = 0; // 重置进度条
+      this.progressStatus = 'success'; // 重置状态
+      if (this.timer) {
+        clearInterval(this.timer);
+      }
+      // 模拟录音进度
+      this.timer = setInterval(() => {
+        if (this.progress < 100) {
+          this.progress += 10; // 每次增加 5%
+        } else {
+          clearInterval(this.timer); // 停止定时器
+          this.progressStatus = 'success'; // 录音完成
+        }
+      }, 200); // 每 200 毫秒更新一次
+    },
+
       recordVoice()
       {
         if(this.isRecordingVoice) {
@@ -341,6 +410,7 @@ import SystemInformation from './LandingPage/SystemInformation'
           });
           return;
         }else{
+          this.startProgress(); // 启动进度条
           this.isRecordingVoice = true;
           this.$http.get('http://127.0.0.1:8000/record_voice')
         .then(response => {
