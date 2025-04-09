@@ -191,38 +191,38 @@
 
         <div v-if="value==5">
                 <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="recordVoice" >起飞</el-button>
-                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="recordVoice" >降落</el-button>
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('takeoff')" >起飞</el-button>
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('land')" >降落</el-button>
                 </div>
 
                 <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="recordVoice" >上升</el-button>
-                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="recordVoice" >下降</el-button>
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('up')" >上升</el-button>
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('down')" >下降</el-button>
                 </div>
           
                 <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="recordVoice" >前进</el-button>
-                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="recordVoice" >后退</el-button>
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('forward')" >前进</el-button>
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('back')" >后退</el-button>
                 </div>
 
                 <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="recordVoice" >左移</el-button>
-                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="recordVoice" >右移</el-button>
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('left')" >左移</el-button>
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('right')" >右移</el-button>
                 </div>
 
                 <!--<div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="recordVoice" >前翻</el-button>
-                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="recordVoice" >后翻</el-button>
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('')" >前翻</el-button>
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('')" >后翻</el-button>
                 </div>
 
                 <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="recordVoice" >上翻</el-button>
-                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="recordVoice" >下翻</el-button>
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('')" >上翻</el-button>
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('')" >下翻</el-button>
                 </div>-->
 
                 <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="recordVoice" >左旋</el-button>
-                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="recordVoice" >右旋</el-button>
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('rotate_left')" >左旋</el-button>
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('rotate_right')" >右旋</el-button>
                 </div>
         </div>
            <!---------------------------------------------------------->
@@ -547,6 +547,25 @@ import SystemInformation from './LandingPage/SystemInformation'
         }
 
       },
+      // 前端按键按下控制无人机动作
+      sendCommand(command) {
+        this.$http.post('http://127.0.0.1:8000/key_input', { request_key: command })
+            .then(response => {
+                console.log(response.data);
+                this.$message({
+                    message: response.data.message,
+                    type: 'success'
+                });
+            })
+            .catch(error => {
+                console.error(error);
+                this.$message({
+                    message: '命令发送失败',
+                    type: 'error'
+                });
+            });
+        },
+
 
       openVoice(){
         this.$http.get('http://127.0.0.1:8000/turn_voice')
@@ -565,47 +584,47 @@ import SystemInformation from './LandingPage/SystemInformation'
         window.open("http://127.0.0.1:8000/admin/", "_blank");
   },
 
-    turnOnGetCount() {
-      this.isGettingCount = true;
-      this.intervalId = setInterval(() => {
-        this.getCount();
-        if (!this.isGettingCount) {
-          clearInterval(this.intervalId);
-        }
-      }, 200);
-    },
-    turnoffGetCount() {
-      this.isGettingCount = false;
-    },
-    controlGetCount(sign) {
-      if (sign) {
-        console.log(this.isEye, this.isMouth, this.isHead);
-        if ((this.isHead && !this.isMouth && !this.isEye) ||
-            (!this.isHead && this.isMouth && !this.isEye) ||
-            (!this.isHead && !this.isMouth && this.isEye)) {
-
-          this.turnOnGetCount();
-        }
-      } else {
-        if (!this.isHead && !this.isMouth && !this.isEye) {
-          this.turnoffGetCount();
-          console.log("turnoffGetCount");
-        }
-      }
-
-    },
-
-    getCount() {
-      this.$http.get('http://127.0.0.1:8000/get_count')
-          .then(response => {
-            console.log(response.data);
-            this.EyeCount = response.data.EyeCount;
-            this.MouthCount = response.data.MouthCount;
-            this.HeadLeftCount = response.data.HeadLeftCount;
-            this.HeadRightCount = response.data.HeadRightCount;
-            this.HeadShakeCount = response.data.HeadShakeCount;
-          })
-    },
+    // turnOnGetCount() {
+    //   this.isGettingCount = true;
+    //   this.intervalId = setInterval(() => {
+    //     this.getCount();
+    //     if (!this.isGettingCount) {
+    //       clearInterval(this.intervalId);
+    //     }
+    //   }, 200);
+    // },
+    // turnoffGetCount() {
+    //   this.isGettingCount = false;
+    // },
+    // controlGetCount(sign) {
+    //   if (sign) {
+    //     console.log(this.isEye, this.isMouth, this.isHead);
+    //     if ((this.isHead && !this.isMouth && !this.isEye) ||
+    //         (!this.isHead && this.isMouth && !this.isEye) ||
+    //         (!this.isHead && !this.isMouth && this.isEye)) {
+    //
+    //       this.turnOnGetCount();
+    //     }
+    //   } else {
+    //     if (!this.isHead && !this.isMouth && !this.isEye) {
+    //       this.turnoffGetCount();
+    //       console.log("turnoffGetCount");
+    //     }
+    //   }
+    //
+    // },
+    //
+    // getCount() {
+    //   this.$http.get('http://127.0.0.1:8000/get_count')
+    //       .then(response => {
+    //         console.log(response.data);
+    //         this.EyeCount = response.data.EyeCount;
+    //         this.MouthCount = response.data.MouthCount;
+    //         this.HeadLeftCount = response.data.HeadLeftCount;
+    //         this.HeadRightCount = response.data.HeadRightCount;
+    //         this.HeadShakeCount = response.data.HeadShakeCount;
+    //       })
+    // },
     change() {
       let data = {'weight': this.value}
       this.$http.post('http://127.0.0.1:8000/weight', data)
@@ -656,76 +675,76 @@ import SystemInformation from './LandingPage/SystemInformation'
             console.error(error);
           })
     },
-    openEye() {
-      this.$http.get('http://127.0.0.1:8000/turn_eye')
-          .then(response => {
-            if (response.data.status == 1) {
-              this.controlGetCount(1)
-              this.$data.isEye = true;
-            } else {
-              this.$data.isEye = false;
-              this.controlGetCount(0)
-            }
-            console.log(response.data, this.isEye);
-          })
-    },
-    openMouth() {
-      this.$http.get('http://127.0.0.1:8000/turn_mouth')
-          .then(response => {
-            if (response.data.status == 1) {
-              this.controlGetCount(1)
-              this.$data.isMouth = true;
-            } else {
-              this.$data.isMouth = false;
-              this.controlGetCount(0)
-            }
-            console.log(response.data, this.isMouth);
-          })
-    },
-    openHead() {
-      this.$http.get('http://127.0.0.1:8000/turn_head')
-          .then(response => {
-            if (response.data.status == 1) {
-              this.controlGetCount(1)
-              this.$data.isHead = true;
-            } else {
-              this.$data.isHead = false;
-              this.controlGetCount(0)
-            }
-            console.log(response.data, this.isHead);
-          })
-    },
-    openHand() {
-      this.$http.get('http://127.0.0.1:8000/turn_hand')
-          .then(response => {
-            if (response.data.status == 1) {
-              this.$data.isHand = true;
-            } else {
-              this.$data.isHand = false;
-            }
-            console.log(response.data, this.isHand);
-          })
-    },
-    openHandPoint() {
-      this.$http.get('http://127.0.0.1:8000/turn_hand_point')
-          .then(response => {
-            if (response.data.status == 1) {
-              this.$data.isHandPoint = true;
-            } else {
-              this.$data.isHandPoint = false;
-            }
-            console.log(response.data, this.isHandPoint);
-          })
-    },
-    reset_count() {
-      this.$http.get('http://127.0.0.1:8000/reset_count')
-          .then(response => {
-            console.log(response.data);
-          })
-          .catch(error => {
-            console.error(error);
-          });
-    },
+    // openEye() {
+    //   this.$http.get('http://127.0.0.1:8000/turn_eye')
+    //       .then(response => {
+    //         if (response.data.status == 1) {
+    //           this.controlGetCount(1)
+    //           this.$data.isEye = true;
+    //         } else {
+    //           this.$data.isEye = false;
+    //           this.controlGetCount(0)
+    //         }
+    //         console.log(response.data, this.isEye);
+    //       })
+    // },
+    // openMouth() {
+    //   this.$http.get('http://127.0.0.1:8000/turn_mouth')
+    //       .then(response => {
+    //         if (response.data.status == 1) {
+    //           this.controlGetCount(1)
+    //           this.$data.isMouth = true;
+    //         } else {
+    //           this.$data.isMouth = false;
+    //           this.controlGetCount(0)
+    //         }
+    //         console.log(response.data, this.isMouth);
+    //       })
+    // },
+    // openHead() {
+    //   this.$http.get('http://127.0.0.1:8000/turn_head')
+    //       .then(response => {
+    //         if (response.data.status == 1) {
+    //           this.controlGetCount(1)
+    //           this.$data.isHead = true;
+    //         } else {
+    //           this.$data.isHead = false;
+    //           this.controlGetCount(0)
+    //         }
+    //         console.log(response.data, this.isHead);
+    //       })
+    // },
+    // openHand() {
+    //   this.$http.get('http://127.0.0.1:8000/turn_hand')
+    //       .then(response => {
+    //         if (response.data.status == 1) {
+    //           this.$data.isHand = true;
+    //         } else {
+    //           this.$data.isHand = false;
+    //         }
+    //         console.log(response.data, this.isHand);
+    //       })
+    // },
+    // openHandPoint() {
+    //   this.$http.get('http://127.0.0.1:8000/turn_hand_point')
+    //       .then(response => {
+    //         if (response.data.status == 1) {
+    //           this.$data.isHandPoint = true;
+    //         } else {
+    //           this.$data.isHandPoint = false;
+    //         }
+    //         console.log(response.data, this.isHandPoint);
+    //       })
+    // },
+    // reset_count() {
+    //   this.$http.get('http://127.0.0.1:8000/reset_count')
+    //       .then(response => {
+    //         console.log(response.data);
+    //       })
+    //       .catch(error => {
+    //         console.error(error);
+    //       });
+    // },
     openCamera() {
       this.$http.get('http://127.0.0.1:8000/turn_camera')
           .then(response => {
