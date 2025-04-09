@@ -38,4 +38,5 @@ urlpatterns = [
     # path("turn_hand_point", login.turn_hand_point, name="turn_hand_point"),
     path("wifi_connect", drone.get_wifi_state, name="wifi_connect"),
     path("drone_video", drone.video_feed, name="drone_video"),
+    path("get_current_state", drone.get_current_state, name="get_current_state"),
 ]
