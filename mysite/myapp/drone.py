@@ -37,7 +37,7 @@ RIGHT = 6
 
 
 class Drone:
-    def __init__(self):
+    def __init__(self, tello: Tello):
         # 人脸识别、手势识别
         self.app = FaceAnalysis(allowed_modules=['detection', 'recognition', 'landmark_2d_106'],
                                 providers=['CUDAExecutionProvider', 'CPUExecutionProvider'])
@@ -52,47 +52,47 @@ class Drone:
         self.frame = None
 
         self.label = ""  # 手势类别
-        # self.tello = Tello()
-        # # 连接无人机wifi
+        self.tello = tello
+        # 连接无人机wifi
         # wifi.wifi_connect(TELLO_SSID)
-        # self.tello.connect()
-        # # 默认开启视频流
+        self.tello.connect()
+        # 默认开启视频流
         # self.tello.streamon()
-        # self.frame = self.tello.get_frame_read().frame
-        # logging.info(f"drone battery: {self.tello.get_battery()}")
+        self.frame = self.tello.get_frame_read().frame
+        logging.info(f"drone battery: {self.tello.get_battery()}")
 
-        self.action = LAND #控制飞行状态
-        self.action_cache1 = None
-        self.action_cache2 = None
+        # self.action = LAND #控制飞行状态
+        # self.action_cache1 = None
+        # self.action_cache2 = None
+        #
+        # self.isDroneIdle = False  # 是否处于空闲状态
+        #
+        # self.move_speed = 10  # 移动速度 cm/s
+        # self.move_distance = 10 #单次移动距离 cm
 
-        self.isDroneIdle = False  # 是否处于空闲状态
+    # def change_action(self, action):
+    #     """加窗改变无人机状态"""
+    #     self.action_cache2 = self.action_cache1
+    #     self.action_cache1 = self.action
+    #     self.action = action
+    #
+    #     if self.action_cache1 == self.action_cache2:
+    #         if self.action_cache1 == self.action:
+    #             self.send_action_command(self.action)
 
-        self.move_speed = 10  # 移动速度 cm/s
-        self.move_distance = 10 #单次移动距离 cm
-
-    def change_action(self, action):
-        """加窗改变无人机状态"""
-        self.action_cache2 = self.action_cache1
-        self.action_cache1 = self.action
-        self.action = action
-
-        if self.action_cache1 == self.action_cache2:
-            if self.action_cache1 == self.action:
-                self.send_action_command(self.action)
-
-    def send_action_command(self, command):
-        self.check_drone_idle()
-        if self.isDroneIdle:
-            pass #空闲就发送指令
-        else:
-            return #不空闲就不发送指令
+    # def send_action_command(self, command):
+    #     self.check_drone_idle()
+    #     if self.isDroneIdle:
+    #         pass #空闲就发送指令
+    #     else:
+    #         return #不空闲就不发送指令
 
 
         
-    
-    def check_drone_idle(self):
-        """检查无人机是否处于空闲状态"""
-        pass
+    #
+    # def check_drone_idle(self):
+    #     """检查无人机是否处于空闲状态"""
+    #     pass
     def get_frame_info(self):
         """只有一个人时(绿)，绘制对应的手势框(蓝)，
         多人时会画脸的框，并标红
@@ -104,6 +104,7 @@ class Drone:
         try:
             # frame = self.tello.get_frame_read().frame
             # frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
             ret, frame = self.cap.read()
             if not ret:
                 logging.warning("无法从PC摄像头中获取画面，尝试重新打开摄像头")
@@ -258,26 +259,24 @@ class Drone:
             logging.error(f"Error setting speed: {e}")
 
     
-    def set_move_distance(self, distance):
-        """设置无人机移动距离,后续移动要调用这个"""
-        try:
-            if(distance < 10): #限幅
-                distance = 10
-            elif(distance >30):
-                distance = 30
-            self.move_distance = distance
-        except Exception as e:
-            logging.error(f"Error setting move distance: {e}")
+    # def set_move_distance(self, distance):
+    #     """设置无人机移动距离,后续移动要调用这个"""
+    #     try:
+    #         if(distance < 10): #限幅
+    #             distance = 10
+    #         elif(distance >30):
+    #             distance = 30
+    #         self.move_distance = distance
+    #     except Exception as e:
+    #         logging.error(f"Error setting move distance: {e}")
 
     
 
- 
         
 
     
 
 
-    # def
 
 
 

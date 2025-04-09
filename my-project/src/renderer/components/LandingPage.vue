@@ -716,17 +716,17 @@ import SystemInformation from './LandingPage/SystemInformation'
     //         console.log(response.data, this.isHead);
     //       })
     // },
-    // openHand() {
-    //   this.$http.get('http://127.0.0.1:8000/turn_hand')
-    //       .then(response => {
-    //         if (response.data.status == 1) {
-    //           this.$data.isHand = true;
-    //         } else {
-    //           this.$data.isHand = false;
-    //         }
-    //         console.log(response.data, this.isHand);
-    //       })
-    // },
+    openHand() {
+      this.$http.get('http://127.0.0.1:8000/turn_hand')
+          .then(response => {
+            if (response.data.status == 1) {
+              this.$data.isHand = true;
+            } else {
+              this.$data.isHand = false;
+            }
+            console.log(response.data, this.isHand);
+          })
+    },
     // openHandPoint() {
     //   this.$http.get('http://127.0.0.1:8000/turn_hand_point')
     //       .then(response => {

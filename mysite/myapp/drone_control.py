@@ -26,114 +26,58 @@ CTRL_MAP = {
 # -------------------------------------------
 
 
+class DroneController:
+    def __init__(self, tello:Tello):
+        self.tello = tello
+
+        # RC
+        self.lr = 0
+        self.fb = 0
+        self.ud = 0
+        self.yv = 0
+        self.speed = 50
 
 
-def key_ctrl(key, drone):
-    """
-    根据键盘输入控制无人机动作
-    :param key: 用户输入的键盘按键
-    :param drone: Tello 对象
-    """
-    match key:
-        case 'takeoff':
-            print(f"Sending command: {key}")
-            drone.takeoff()
-        case 'land':
-            print(f"Sending command: {key}")
-            drone.land()
-        case 'up':
-            if drone.stream_on:
-                print(f"Stream is already on")
-            else:
-                print(f"Sending command: {key}")
-                drone.streamon()
-                while True:
-                    frame = drone.get_frame_read().frame
-                    cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                    cv2.imshow("Tello Stream", frame)
-                    if cv2.waitKey(1) & 0xFF == ord('q'):
-                        cv2.destroyAllWindows()
-                        drone.streamoff()
-                        break
-        case 'down':
-            if drone.stream_on:
-                print(f"Sending command: {key}")
-                drone.streamoff()
-            else:
-                print(f"Stream is already off")
-        # case 'up':
-        #     print(f"Sending command: {key}")
-        #     drone.move_up(50)
-        # case 'down':
-        #     print(f"Sending command: {key}")
-        #     drone.move_down(50)
-        # case 'forward':
-        #     print(f"Sending command: {key}")
-        #     drone.move_forward(50)
-        # case 'back':
-        #     print(f"Sending command: {key}")
-        #     drone.move_back(50)
-        # case 'left':
-        #     print(f"Sending command: {key}")
-        #     drone.move_left(50)
-        # case 'right':
-        #     print(f"Sending command: {key}")
-        #     drone.move_right(50)
-        case 'left':
-            battery = drone.get_battery()
-            print(f"Battery: {battery}%")
-            return {'status': 1, 'message': f"电量: {battery}%"}
-        case _:
-            print(f"无效按键{key}")
-            return {'status': 0, 'message': f"无效按键 {key}"}
+    def key_ctrl(self, key):
+        """
+        根据输入控制无人机动作
+        :param key: 无人机动作对应的id
+        """
+        self.lr = self.fb = self.ud = self.yv = 0
+
+        print(f"key: {key}")
+
+        if key == "takeoff":
+            self.tello.takeoff()
+            # time.sleep(5)
+            # self.tello.land()
+        elif key == "land": self.tello.land()
+
+        if key == "left": self.lr = -self.speed
+        elif key == "right": self.lr = self.speed
+
+        if key == "forward": self.fb = self.speed
+        elif key == "back": self.fb = -self.speed
+
+        if key == "up": self.ud = self.speed
+        elif key == "down": self.ud = -self.speed
+
+        if key == "rotate_left": self.yv = self.speed
+        elif key == "rotate_right": self.yv = -self.speed
+
+        print(f"lr: {self.lr}, fb: {self.fb}, ud: {self.ud}, yv: {self.yv}")
+        self.tello.send_rc_control(self.lr, self.fb, self.ud, self.yv)
+        time.sleep(2.5)
+        self.tello.send_rc_control(0,0,0,0)
+
+        return {'status': 1, 'message': f'{CTRL_MAP[key]}'}
 
 
-def key_ctrl_test(key):
-    """
-    根据键盘输入控制无人机动作
-    :param key: 用户输入的键盘按键
-    """
-    # 输入验证：确保 key 是字符串类型
-    if not isinstance(key, str):
-        print("无效输入类型")
-        return {'status': 0, 'message': "无效输入类型"}
-
-    # 匹配按键并执行对应操作
-    if key in CTRL_MAP:
-        action_ch = CTRL_MAP[key]
-        print(f"action: {key}, action_ch: {action_ch}")
-        return {'status': 1, 'message': action_ch}
-    else:
-        print(f"无效按键 {key}")
-        return {'status': 0, 'message': f"无效按键 {key}"}
-
-def gesture_ctrl(gesture, drone):
-    """
-    根据手势控制无人机动作
-    :param gesture: 手势识别结果
-    :param drone: Tello 对象
-    """
-    match gesture:
-        case _:
-            print(f"无效手势{gesture}")
-    pass
 
 
-# 语音控制（预留接口）
-def voice_ctrl(voice, drone):
-    """
-    根据语音命令控制无人机动作
-    :param voice: 语音识别结果
-    :param drone: Tello 对象
-    """
-    match voice:
-        case _:
-            print(f"无效手势{voice}")
-    pass
-
-
-drone = Tello()
-drone.connect()
+# drone = Tello()
+# drone.connect()
+# drone_controller = DroneController(drone)
 
 @csrf_exempt
 def key_input(request):
@@ -146,10 +90,11 @@ def key_input(request):
         print(f"request_key: {request_key}")
         if not request_key:
             return JsonResponse({'status': 0, 'message': "无效按键"})
-        
-        # response = key_ctrl_test(request_key)
-        response = key_ctrl(request_key, drone)
 
+        response = drone_controller.key_ctrl(request_key)
+        # response = key_ctrl_test(request_key)
+        # response = key_ctrl(request_key, drone)
+        #
         if response:
             return JsonResponse(response)
         else:
