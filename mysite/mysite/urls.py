@@ -17,7 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
-from myapp import login,voice
+from myapp import login,voice, drone,drone_control
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -30,15 +30,17 @@ urlpatterns = [
     path("login_get_frame_info", login.get_frame_info, name="login_get_frame_info"),
 
     # ----------电脑控制部分---------#
-
+    path("turn_hand", login.turn_hand, name="turn_hand"),
     path("turn_voice",voice.turn_voice, name="turn_voice"),
     path("record_voice", voice.record_voice, name="record_voice"),
+    # path("turn_hand_point", login.turn_hand_point, name="turn_hand_point"),
 
     # ---------无人机部分---------#
-    path("turn_hand", login.turn_hand, name="turn_hand"),
-    # path("turn_hand_point", login.turn_hand_point, name="turn_hand_point"),
-    #path("wifi_connect", drone.get_wifi_state, name="wifi_connect"),
-    #path("drone_video", drone.video_feed, name="drone_video"),
-    #path("get_current_state", drone.get_current_state, name="get_current_state"),
-    #path("key_input", drone_control.key_input, name="key_input"),
+    # path("wifi_connect", drone.get_wifi_state, name="wifi_connect"),
+    path("wifi_connect", drone.connect_drone, name="wifi_connect"),
+    path("drone_video", drone.video_stream, name="drone_video"),
+    path("get_current_state", drone.get_current_state, name="get_current_state"),
+    # path("key_input", drone_control.key_input, name="key_input"),
+    path("drone_control", drone.control, name="drone_control"),
+    path("update_speed", drone.update_speed, name="update_speed"),
 ]
