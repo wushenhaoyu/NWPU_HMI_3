@@ -6,10 +6,16 @@
       <div style="width: 70%;">
         <div style="height: 100%;width: 100%;">
           <div style="text-align: center;font-size: larger;font-weight: 900;color: black;background-color: #e9eef3; height: 5vh;line-height: 5vh;">摄像头画面</div>
-            <div v-if="isShowImg">            
-              <img   :src="imgurl" alt="electron-vue" >
+            <div v-if="isShowImg1 && isLogin != 2">            
+              <img   :src="imgurl1" alt="electron-vue" >
             </div>
-            <div v-else>
+            <div v-if="!isShowImg1 && isLogin != 2">
+              <img  style="height: 60%;width: 95%;object-fit: contain;" src="~@/assets/bg.png" alt="electron-vue" >
+            </div>
+            <div v-if="isShowImg2 && isLogin == 2">
+              <img   :src="imgurl2" alt="electron-vue" >
+            </div>
+            <div v-if="!isShowImg2 && isLogin == 2">
               <img  style="height: 60%;width: 95%;object-fit: contain;" src="~@/assets/bg.png" alt="electron-vue" >
             </div>
           </div>
@@ -54,7 +60,7 @@
           <el-button type="primary" style="width: 80%;font-weight: 600;" @click="storageFace">录入人脸</el-button>
         </div>
         <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-          <el-button type="primary" style="width: 80%;font-weight: 600;" @click="openCamera">开启摄像头</el-button>
+          <el-button type="primary" style="width: 80%;font-weight: 600;" @click="openCamera1">开启摄像头</el-button>
         </div>
         <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
           <el-button type="primary" style="width: 80%;font-weight: 600;" @click="redirectToAdmin" >人脸管理</el-button>
@@ -176,29 +182,14 @@
         <div v-if="value2==1">
 
 
-                <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;"
-                     @click="openPoint">
-                  <div style="width: 40%;text-align: center;">关键点显示</div>
-                  <el-switch
-                      v-model="isPoint"
-                      active-text="开启"
-                      inactive-text="关闭">
-                  </el-switch>
-                </div>
 
 
-          <div style="height: 20vh;"></div>
+          <div style="height: 40vh;"></div>
           <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-            <el-input style="width: 80%;" v-model="name" placeholder="请输入名字"></el-input>
-        </div>
-        <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-          <el-button type="primary" style="width: 80%;font-weight: 600;" @click="storageFace">录入人脸</el-button>
+          <el-button type="primary" style="width: 80%;font-weight: 600;" @click="openCamera2">开启人脸跟随</el-button>
         </div>
         <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
           <el-button type="primary" style="width: 80%;font-weight: 600;" @click="openCamera">开启摄像头</el-button>
-        </div>
-        <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-          <el-button type="primary" style="width: 80%;font-weight: 600;" @click="redirectToAdmin" >人脸管理</el-button>
         </div>
         </div>
         
@@ -345,7 +336,7 @@
           <el-button type="primary" style="width: 80%;font-weight: 600;" @click="login">登录</el-button>
         </div>
         <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-          <el-button type="primary" style="width: 80%;font-weight: 600;" @click="openCamera">开启摄像头</el-button>
+          <el-button type="primary" style="width: 80%;font-weight: 600;" @click="openCamera1">开启摄像头</el-button>
         </div>
         <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
           <el-button type="primary" style="width: 80%;font-weight: 600;" @click="redirectToAdmin" >人脸管理</el-button>
@@ -382,7 +373,8 @@ import SystemInformation from './LandingPage/SystemInformation'
         voiceAction: -1,
         isRecordingVoice: false,
         isVoice:false,
-        isShowImg:false,
+        isShowImg1:false,
+        isShowImg2:false,
         isFace:false,
         isPoint:false,
         isAlign:false,
@@ -397,7 +389,8 @@ import SystemInformation from './LandingPage/SystemInformation'
         timer: null,
         CurrentStateTimer: null,
         name:'',
-        imgurl_:'http://localhost:8000/video',
+        imgurl1_:'http://localhost:8000/video',
+        imgurl2_:'http://localhost:8000/video',
         timestamp: Date.now(),
         move_speed: 10,
         fly_height: 100,
@@ -456,8 +449,11 @@ import SystemInformation from './LandingPage/SystemInformation'
     },
     computed: {
       //
-      imgurl(){
-        return `${this.imgurl_}?t=${this.timestamp}`;
+      imgurl1(){
+        return `${this.imgurl1_}?t=${this.timestamp}`;
+      },
+      imgurl2(){
+        return `${this.imgurl2_}?t=${this.timestamp}`;
       },
       getVoiceAction(){
         if(this.voiceAction == 0){
@@ -493,7 +489,7 @@ import SystemInformation from './LandingPage/SystemInformation'
           console.log(this.isLogin)
       },
       getCurrentState(){
-        this.data.CurrentStateTimer = setInterval(() => {
+        this.CurrentStateTimer = setInterval(() => {
           this.$http.get('http://127.0.0.1:8000/get_current_state').then(response => {
             if (response.data.status == 1) {
               this.currentState.agx = response.data.tello_state.agx;
@@ -518,6 +514,7 @@ import SystemInformation from './LandingPage/SystemInformation'
                 message: '获取状态参数失败',
                 type: 'error'
               });
+              clearInterval(this.CurrentStateTimer) 
             }
           })
         }, 250);
@@ -533,6 +530,7 @@ import SystemInformation from './LandingPage/SystemInformation'
                 message: '连接成功',
                 type: 'success'
               });
+              this.getCurrentState()
 
             } else {
               this.$message({
@@ -795,15 +793,29 @@ import SystemInformation from './LandingPage/SystemInformation'
     //         console.error(error);
     //       });
     // },
-    openCamera() {
+    openCamera1() {
       this.$http.get('http://127.0.0.1:8000/turn_camera')
           .then(response => {
             if (response.data.status == 1) {
-              this.isShowImg = true;
+              this.isShowImg1 = true;
             } else {
-              this.isShowImg = false;
+              this.isShowImg1 = false;
             }
-            console.log(response.data.status, this.isShowImg);
+            console.log(response.data.status, this.isShowImg2);
+          })
+          .catch(error => {
+            console.error(error);
+          });
+    },
+    openCamera2() {
+      this.$http.get('http://127.0.0.1:8000/turn_camera')
+          .then(response => {
+            if (response.data.status == 1) {
+              this.isShowImg2 = true;
+            } else {
+              this.isShowImg2 = false;
+            }
+            console.log(response.data.status, this.isShowImg2);
           })
           .catch(error => {
             console.error(error);
