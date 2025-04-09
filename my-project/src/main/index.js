@@ -19,7 +19,7 @@ function createWindow () {
    * Initial window options
    */
   mainWindow = new BrowserWindow({
-    height: 620,
+    height: 640,
     useContentSize: true,
     resizable: false, // 禁止窗口大小调整 
     width: 1050
