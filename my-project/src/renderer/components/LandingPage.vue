@@ -391,7 +391,7 @@ import SystemInformation from './LandingPage/SystemInformation'
         CurrentStateTimer: null,
         name:'',
         imgurl1_:'http://localhost:8000/video',
-        imgurl2_:'http://localhost:8000/video',
+        imgurl2_:'http://localhost:8000/drone_vide',
         timestamp: Date.now(),
         move_speed: 10,
         fly_height: 100,
