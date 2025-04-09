@@ -266,12 +266,13 @@
 
                 
             <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;line-height: 7vh;font-size: 2.5vh;"> 
-              <div style="width: 35%;text-align: center;">移动速度cm/s</div><el-input-number v-model="move_speed"  :min="10" :max="20" label="描述文字"></el-input-number>
+              <div style="width: 35%;text-align: center;">移动速度cm/s</div>
+              <el-input-number v-model="move_speed"  :min="10" :max="20" label="描述文字"></el-input-number>
             </div>
 
 
             <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-            <el-button type="primary" style="width: 80%;font-weight: 600;" @click="recordVoice" >设置</el-button>
+            <el-button type="primary" style="width: 80%;font-weight: 600;" @click="updateSpeed" >设置</el-button>
             </div>
         </div>
            <!---------------------------------------------------------->
@@ -492,6 +493,7 @@ import SystemInformation from './LandingPage/SystemInformation'
           }
           console.log(this.isLogin)
       },
+
       getCurrentState(){
         this.data.CurrentStateTimer = setInterval(() => {
           this.$http.get('http://127.0.0.1:8000/get_current_state').then(response => {
@@ -604,13 +606,21 @@ import SystemInformation from './LandingPage/SystemInformation'
       },
       // 前端按键按下控制无人机动作
       sendCommand(command) {
-        this.$http.post('http://127.0.0.1:8000/key_input', { request_key: command })
+        // this.$http.post('http://127.0.0.1:8000/key_input', { request_key: command })
+        this.$http.post('http://127.0.0.1:8000/drone_control', { command: command })
             .then(response => {
                 console.log(response.data);
-                this.$message({
+                if(response.data.status === 1){
+                  this.$message({
                     message: response.data.message,
                     type: 'success'
-                });
+                  });
+                }else{
+                  this.$message({
+                    message: response.data.message,
+                    type: 'error'
+                  });
+                }
             })
             .catch(error => {
                 console.error(error);
@@ -621,7 +631,30 @@ import SystemInformation from './LandingPage/SystemInformation'
             });
         },
 
-
+      updateSpeed() {
+          const speed = this.move_speed;
+          this.$http.post('http://127.0.0.1:8000/update_speed', { speed: speed })
+            .then(response => {
+              if (response.data.status === 1) {
+                this.$message({
+                  message: response.data.message,
+                  type: 'success'
+                });
+              } else {
+                this.$message({
+                  message: response.data.message,
+                  type: 'error'
+                });
+              }
+            })
+            .catch(error => {
+              console.error(error);
+              this.$message({
+                message: '速度设置失败',
+                type: 'error'
+              });
+            });
+        },
       openVoice(){
         this.$http.get('http://127.0.0.1:8000/turn_voice')
         .then(response => {
