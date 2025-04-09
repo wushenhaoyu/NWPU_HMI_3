@@ -8,6 +8,7 @@ from . import login,wifi
 from ultralytics import YOLO
 from djitellopy import Tello
 # from myapp.models import Face
+from myapp.hand_process import *
 from insightface.app import FaceAnalysis
 from django.http import JsonResponse, StreamingHttpResponse
 
@@ -18,12 +19,6 @@ logging.basicConfig(
 )
 # 禁用 pywifi 的日志记录
 logging.getLogger('pywifi').setLevel(logging.CRITICAL)
-
-# 调整ROI参数(右侧位置)
-ROI_WIDTH_RATIO = 1.2
-ROI_HEIGHT_RATIO = 1.5
-ROI_OFFSET_X_RATIO = 1.2  # 正数表示右侧偏移
-ROI_OFFSET_Y_RATIO = 0.8
 
 TELLO_SSID = "TELLO-FDDA9E"
 
@@ -155,39 +150,7 @@ class Drone:
                         cv2.rectangle(self.frame, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])),
                                       (0, 255, 0), 2)
 
-                        x1, y1 = int(bbox[0]), int(bbox[1])
-                        x2, y2 = int(bbox[2]), int(bbox[3])
-                        w = x2 - x1
-                        h = y2 - y1
-                        # 调整ROI到人脸右侧
-                        roi_x = x2 + int(w * ROI_OFFSET_X_RATIO)  # 右侧偏移使用加法
-                        roi_y = y2 + int(h * ROI_OFFSET_Y_RATIO)
-                        roi_w = int(w * ROI_WIDTH_RATIO)
-                        roi_h = int(h * ROI_HEIGHT_RATIO)
-
-                        # ROI边界约束
-                        roi_x = max(0, min(roi_x, iw - roi_w))
-                        roi_y = max(0, min(roi_y, ih - roi_h))
-
-                        # 手
-                        cv2.rectangle(self.frame, (roi_x, roi_y), (roi_x + roi_w, roi_y + roi_h),
-                                      (255, 0, 0), 2)
-
-                        detect_frame = self.frame[roi_y:roi_y + roi_h, roi_x:roi_x + roi_w]
-                        detect_hands = self.model(detect_frame, stream=True)
-                        for detection in detect_hands:
-                            for box in detection.boxes:
-                                # 获取边界框坐标
-                                # x1, y1, x2, y2 = map(int, box.xyxy[0])  # 转换为整数
-                                conf = box.conf[0]  # 置信度
-                                cls = int(box.cls[0])  # 类别索引
-                                self.label = self.model.names[cls]
-                                ges_info = f"{self.label} {conf:.2f}"  # 获取类别名称和置信度
-
-                                # 绘制边界框和类别
-                                # cv2.rectangle(self.frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                                cv2.putText(self.frame, ges_info, (roi_x, roi_y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
-                                            (0, 255, 0), 2)
+                        self.frame = hand_recognize(self.frame, bbox)
 
                         # 其他人统一标红
                         for face in face_results[1:]:
