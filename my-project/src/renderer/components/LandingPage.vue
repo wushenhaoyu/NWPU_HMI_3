@@ -227,17 +227,17 @@
         </div>
            <!---------------------------------------------------------->
            <div v-if="value==6">
-            <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;line-height: 7vh;font-size: 2.5vh;"> 
-              <div style="width: 35%;text-align: center;">移动距离cm</div><el-input-number v-model="move_distance"  :min="10" :max="20" label="描述文字"></el-input-number>
-            </div>
 
             <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;line-height: 7vh;font-size: 2.5vh;"> 
               <div style="width: 35%;text-align: center;">移动速度cm/s</div><el-input-number v-model="move_speed"  :min="10" :max="20" label="描述文字"></el-input-number>
             </div>
 
             <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;line-height: 7vh;font-size: 2.5vh;"> 
-              <div style="width: 30%;text-align: center;">旋转角度°</div><el-input-number v-model="rotation_angle"  :min="10" :max="20" label="描述文字"></el-input-number>
+              <div style="width: 35%;text-align: center;">飞行高度cm</div><el-input-number v-model="fly_height"  :min="50" :max="200" label="描述文字"></el-input-number>
             </div>
+
+
+
 
             <div style="height: 20vh;"></div>
 
@@ -301,6 +301,9 @@
 
         <div v-else>
         <div style="text-align: center;font-weight: 900;line-height: 10vh;font-size: 25px;">系统登录</div>
+
+        <div><img src="~@/assets/lg.png" alt="electron-vue" style="width: 80%;margin-left: 10%;"></div>
+        <div style="height: 10vh;"></div>
         <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
             <el-input style="width: 80%;" v-model="name" placeholder="请输入名字"></el-input>
         </div>
@@ -339,7 +342,7 @@ import SystemInformation from './LandingPage/SystemInformation'
       return {
         //
         fullscreenLoading: false,
-        isLogin: true,
+        isLogin: false,
         EyeCount : 0,
         MouthCount : 0,
         HeadLeftCount : 0,
@@ -365,9 +368,8 @@ import SystemInformation from './LandingPage/SystemInformation'
         name:'',
         imgurl_:'http://localhost:8000/video',
         timestamp: Date.now(),
-        move_distance: 10,
         move_speed: 10,
-        rotation_angle: 10,
+        fly_height: 100,
         currentState:{
           pitch: 0,  
           roll: 0,   
@@ -379,7 +381,7 @@ import SystemInformation from './LandingPage/SystemInformation'
           temph: 0,  
           tof: 0,    
           h: 0,      
-          bat: 100,  
+          bat: 0,  
           baro: 0.0, 
           time: 0,   
           agx: 0.0,  
