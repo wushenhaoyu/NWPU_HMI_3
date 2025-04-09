@@ -1,10 +1,14 @@
+import json
 import re
 import os
 import cv2
 import time
 import torch
 import logging
-from . import login,wifi
+
+from django.views.decorators.csrf import csrf_exempt
+
+from . import login, wifi
 from ultralytics import YOLO
 from djitellopy import Tello
 # from myapp.models import Face
@@ -19,12 +23,6 @@ logging.basicConfig(
 # 禁用 pywifi 的日志记录
 logging.getLogger('pywifi').setLevel(logging.CRITICAL)
 
-# 调整ROI参数(右侧位置)
-ROI_WIDTH_RATIO = 1.2
-ROI_HEIGHT_RATIO = 1.5
-ROI_OFFSET_X_RATIO = 1.2  # 正数表示右侧偏移
-ROI_OFFSET_Y_RATIO = 0.8
-
 TELLO_SSID = "TELLO-FDDA9E"
 
 LAND = 0
@@ -35,182 +33,43 @@ BACK = 4
 LEFT = 5
 RIGHT = 6
 
+# -------------------------------------------
+# 指令映射表
+CTRL_MAP = {
+    "takeoff": '起飞',  # 示例：按下 "t" 键起飞
+    "land": '降落',  # 示例：按下 "l" 键降落
+    "up": '上升',  # 示例：按下 "l" 键降落
+    "down": '下降',  # 示例：按下 "l" 键降落
+    "forward": '前进',  # 示例：按下 "w" 键前进
+    "back": '后退',  # 示例：按下 "s" 键后退
+    "left": '左移',  # 示例：按下 "a" 键左移
+    "right": '右移',  # 示例：按下 "d" 键右移
+    "rotate_left": '向左转',  # 示例：按下 "d" 键右移
+    "rotate_right": '向右转',  # 示例：按下 "d" 键右移
 
-class Drone:
+    "battery": '查询电量'
+}
+# -------------------------------------------
+
+global drone_video, drone_controller
+
+
+class DroneVideo:
     def __init__(self, tello: Tello):
         # 人脸识别、手势识别
-        self.app = FaceAnalysis(allowed_modules=['detection', 'recognition', 'landmark_2d_106'],
-                                providers=['CUDAExecutionProvider', 'CPUExecutionProvider'])
-        self.app.prepare(ctx_id=0 if torch.cuda.is_available() else -1, det_size=(640, 640))
-        self.model = YOLO(os.path.join(os.path.dirname(__file__), 'best.pt'))
-
-        self.isFaceRecognize = True
-        self.name = ""
-
-
-        self.cap = cv2.VideoCapture(0)
         self.frame = None
-
-        self.label = ""  # 手势类别
         self.tello = tello
-        # 连接无人机wifi
-        # wifi.wifi_connect(TELLO_SSID)
-        self.tello.connect()
-        # 默认开启视频流
-        # self.tello.streamon()
-        self.frame = self.tello.get_frame_read().frame
-        logging.info(f"drone battery: {self.tello.get_battery()}")
+        print("实例化")
 
-        # self.action = LAND #控制飞行状态
-        # self.action_cache1 = None
-        # self.action_cache2 = None
-        #
-        # self.isDroneIdle = False  # 是否处于空闲状态
-        #
-        # self.move_speed = 10  # 移动速度 cm/s
-        # self.move_distance = 10 #单次移动距离 cm
-
-    # def change_action(self, action):
-    #     """加窗改变无人机状态"""
-    #     self.action_cache2 = self.action_cache1
-    #     self.action_cache1 = self.action
-    #     self.action = action
-    #
-    #     if self.action_cache1 == self.action_cache2:
-    #         if self.action_cache1 == self.action:
-    #             self.send_action_command(self.action)
-
-    # def send_action_command(self, command):
-    #     self.check_drone_idle()
-    #     if self.isDroneIdle:
-    #         pass #空闲就发送指令
-    #     else:
-    #         return #不空闲就不发送指令
-
-
-        
-    #
-    # def check_drone_idle(self):
-    #     """检查无人机是否处于空闲状态"""
-    #     pass
     def get_frame_info(self):
-        """只有一个人时(绿)，绘制对应的手势框(蓝)，
-        多人时会画脸的框，并标红
-        Returns:
-            1.经过识别并标注的人脸frame
-            2.人脸数量
-            3.人脸是否在数据库中存在(只有一个人时)
+        """
+        返回无人机摄像头画面
         """
         try:
-            # frame = self.tello.get_frame_read().frame
-            # frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            if not self.tello.stream_on:
+                self.tello.streamon()
+            self.frame = self.tello.get_frame_read().frame
 
-            ret, frame = self.cap.read()
-            if not ret:
-                logging.warning("无法从PC摄像头中获取画面，尝试重新打开摄像头")
-                self.cap.release()
-                self.cap = cv2.VideoCapture(0)
-                ret, frame = self.cap.read()
-                if not ret:
-                    logging.error("重新打开摄像头后仍然无法获取画面")
-                    return None
-            self.frame = cv2.flip(frame, 1)
-
-            ih, iw, _ = self.frame.shape
-            if self.isFaceRecognize:    # 默认开启
-                face_results = []  # 存储人脸识别结果
-                try:
-                    faces = self.app.get(self.frame)
-                except Exception as e:
-                    logging.error(f"app.get()检测人脸时出错： {e}")
-                    faces = []
-
-                if not faces:
-                    # logging.info("没有检测到人脸")
-                    face_results.append({"name": "", "bbox": None})
-                else:
-                    # 获取图像中所有在数据库中存在的人脸
-                    for index, face in enumerate(faces):
-                        try:
-                            recognized_face = login.compare_face_with_database(face)
-                            if recognized_face is not None:
-                                face_results.append({
-                                    "name": recognized_face.name,
-                                    "bbox": face['bbox'],
-                                })
-
-                        except Exception as e:
-                            logging.error(f"识别人脸 {index} 时出错： {e}")
-                            # face_results.append({"name": "", "bbox": None})
-
-                    # 如果数据库人脸识别有结果
-                    if len(face_results) > 0:
-                        # 识别的第一个人，脸绿手蓝
-                        # logging.info(f"识别到的人脸为：{face_results[0]['name']}")
-                        # 以识别出的第一个人为准
-                        name = face_results[0]["name"]
-                        bbox = face_results[0]["bbox"]
-                        # 脸
-                        cv2.putText(self.frame, name, (int(bbox[0]), int(bbox[1]) - 10),
-                                    cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
-                        cv2.rectangle(self.frame, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])),
-                                      (0, 255, 0), 2)
-
-                        x1, y1 = int(bbox[0]), int(bbox[1])
-                        x2, y2 = int(bbox[2]), int(bbox[3])
-                        w = x2 - x1
-                        h = y2 - y1
-                        # 调整ROI到人脸右侧
-                        roi_x = x2 + int(w * ROI_OFFSET_X_RATIO)  # 右侧偏移使用加法
-                        roi_y = y2 + int(h * ROI_OFFSET_Y_RATIO)
-                        roi_w = int(w * ROI_WIDTH_RATIO)
-                        roi_h = int(h * ROI_HEIGHT_RATIO)
-
-                        # ROI边界约束
-                        roi_x = max(0, min(roi_x, iw - roi_w))
-                        roi_y = max(0, min(roi_y, ih - roi_h))
-
-                        # 手
-                        cv2.rectangle(self.frame, (roi_x, roi_y), (roi_x + roi_w, roi_y + roi_h),
-                                      (255, 0, 0), 2)
-
-                        detect_frame = self.frame[roi_y:roi_y + roi_h, roi_x:roi_x + roi_w]
-                        detect_hands = self.model(detect_frame, stream=True)
-                        for detection in detect_hands:
-                            for box in detection.boxes:
-                                # 获取边界框坐标
-                                # x1, y1, x2, y2 = map(int, box.xyxy[0])  # 转换为整数
-                                conf = box.conf[0]  # 置信度
-                                cls = int(box.cls[0])  # 类别索引
-                                self.label = self.model.names[cls]
-                                ges_info = f"{self.label} {conf:.2f}"  # 获取类别名称和置信度
-
-                                # 绘制边界框和类别
-                                # cv2.rectangle(self.frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                                cv2.putText(self.frame, ges_info, (roi_x, roi_y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
-                                            (0, 255, 0), 2)
-
-                        # 其他人统一标红
-                        for face in face_results[1:]:
-                            name = face["name"]
-                            bbox = face['bbox']
-                            cv2.putText(self.frame, name, (int(bbox[0]), int(bbox[1]) - 10),
-                                       cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
-                            cv2.rectangle(self.frame, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])),
-                                          (0, 0, 255), 2)
-
-                    # 数据库中没有存入当前图片中的所有人脸
-                    else:
-                        # 绘制陌生人边界框
-                        for face in faces:
-                            bbox = face['bbox']
-                            cv2.rectangle(self.frame, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])),
-                                          (0, 0, 255), 2)
-                            cv2.putText(self.frame, 'Stranger', (int(bbox[0]), int(bbox[1]) - 10),
-                                        cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
-                        # logging.info("当前画面中的人均未在数据库中,请先存入人脸")
-
-            # cv2.imshow('frame', self.frame)
             ret, jpeg = cv2.imencode('.jpg', self.frame)
             return jpeg.tobytes()
             # return jpeg.tobytes(), face_count, face_exists
@@ -219,6 +78,68 @@ class Drone:
             logging.error(f"Error getting frame: {e}")  # 增加日志记录
             return None
             # return None, 0, False
+
+
+class DroneController:
+    def __init__(self, tello: Tello):
+        self.tello = tello
+
+        # RC
+        self.lr = 0
+        self.fb = 0
+        self.ud = 0
+        self.yv = 0
+        self.speed = 50
+        self.delay = 2.5
+
+    def key_ctrl(self, key):
+        """
+        根据输入控制无人机动作
+        :param key: 无人机动作对应的id
+        """
+        self.lr = self.fb = self.ud = self.yv = 0
+
+        print(f"key: {key}")
+
+        if key == "takeoff":
+            self.tello.takeoff()
+            # time.sleep(5)
+            # self.tello.land()
+        elif key == "land":
+            self.tello.land()
+
+        if key == "left":
+            self.lr = -self.speed
+        elif key == "right":
+            self.lr = self.speed
+
+        if key == "forward":
+            self.fb = self.speed
+        elif key == "back":
+            self.fb = -self.speed
+
+        if key == "up":
+            self.ud = self.speed
+        elif key == "down":
+            self.ud = -self.speed
+
+        if key == "rotate_left":
+            self.yv = self.speed
+        elif key == "rotate_right":
+            self.yv = -self.speed
+
+        print(f"lr: {self.lr}, fb: {self.fb}, ud: {self.ud}, yv: {self.yv}")
+        self.tello.send_rc_control(self.lr, self.fb, self.ud, self.yv)
+        time.sleep(self.delay)
+        self.tello.send_rc_control(0, 0, 0, 0)
+
+        return {'status': 1, 'message': f'{CTRL_MAP[key]}'}
+
+    def set_delay(self, delay):
+        self.delay = delay
+
+    def set_speed(self, speed):
+        self.speed = speed
 
     def get_current_state(self):
         """{
@@ -245,44 +166,21 @@ class Drone:
             return state
         except Exception as e:
             pass
-    
-    def set_speed(self, speed):
-        """设置无人机速度"""
-        try:
-            if(speed < 10): #限幅
-                speed = 10
-            elif(speed >30):
-                speed = 30
-            self.move_speed = speed
-            self.tello.set_speed(speed)
-        except Exception as e:
-            logging.error(f"Error setting speed: {e}")
-
-    
-    # def set_move_distance(self, distance):
-    #     """设置无人机移动距离,后续移动要调用这个"""
-    #     try:
-    #         if(distance < 10): #限幅
-    #             distance = 10
-    #         elif(distance >30):
-    #             distance = 30
-    #         self.move_distance = distance
-    #     except Exception as e:
-    #         logging.error(f"Error setting move distance: {e}")
-
-    
-
-        
-
-    
 
 
+def get_wifi_state(request):
+    try:
+        response = wifi.wifi_connect(TELLO_SSID)
+        if response['status'] == 1:
+            drone_video = DroneVideo(Tello())
+            drone_controller = DroneController(Tello())
+            logging.info("无人机已成功连接并初始化")
 
+        return JsonResponse(response)
+    except Exception as e:
+        logging.error(f"Error getting wifi state: {e}")  # 增加日志记录
+        return JsonResponse({'status': 0, 'message': str(e)}, status=500)
 
-
-
-# drone = Drone()
-# drone.get_frame_info()
 
 def gen(camera):
     while True:
@@ -292,29 +190,59 @@ def gen(camera):
         if frame is not None:
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
+
+
 def video_feed(request):
-    return StreamingHttpResponse(gen(drone), content_type='multipart/x-mixed-replace; boundary=frame')
+    return StreamingHttpResponse(gen(drone_video), content_type='multipart/x-mixed-replace; boundary=frame')
 
 
-# def turn_camera(request):
-#     try:
-#         if drone.isOpenDroneCamera:
-#             # drone.cap.release()
-#
-#             drone.isOpenDroneCamera = False
-#             return JsonResponse({'status': 0, 'message': 'Drone Camera turned successfully'})
-#         elif not drone.isOpenDroneCamera:
-#             # drone.cap = cv2.VideoCapture(0)
-#
-#             drone.isOpenDroneCamera = True
-#             return JsonResponse({'status': 1, 'message': 'Drone Camera turned successfully'})
-#     except Exception as e:
-#         logging.error(f"Error turning camera: {e}")  # 增加日志记录
-#         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+@csrf_exempt
+def key_input(request):
+    """
+    控制面板-键盘控制 对应的按键click后返回request_key
+    """
+    try:
+        data = json.loads(request.body)
+        request_key = data.get('request_key')
+        print(f"request_key: {request_key}")
+        if not request_key:
+            return JsonResponse({'status': 0, 'message': "无效按键"})
+
+        response = drone_controller.key_ctrl(request_key)
+
+        if response:
+            return JsonResponse(response)
+        else:
+            action_ch = CTRL_MAP.get(request_key, "未知命令")
+            return JsonResponse({'status': 1, 'message': action_ch})
+    except Exception as e:
+        print(f"Error: {e}")
+        return JsonResponse({'status': 0, 'message': f"Error: {e}"})
+
+
+@csrf_exempt
+def set_delay(request):
+    """
+    修改飞机单次移动时间
+    """
+    try:
+        data = json.loads(request.body)
+        delay = data.get('delay')
+        print(f"delay: {delay}")
+        if not delay:
+            return JsonResponse({'status': 0, 'message': "设置无效"})
+
+        drone_controller.set_delay(delay)
+        return JsonResponse({'status': 1, 'message': f"设置成功"})
+
+    except Exception as e:
+        print(f"Error: {e}")
+        return JsonResponse({'status': 0, 'message': f"Error: {e}"})
+
 
 def get_current_state(request):
     try:
-        state = drone.get_current_state()
+        state = drone_controller.get_current_state()
         response = {
             'status': 1,  # 表示成功获取状态
             'tello_state': state
@@ -322,15 +250,4 @@ def get_current_state(request):
         return JsonResponse(response)
     except Exception as e:
         logging.error(f"Error getting current state: {e}")  # 增加日志记录
-        return JsonResponse({'status': 0 , 'message': str(e)}, status=500)
-
-
-def get_wifi_state(request):
-    try:
-        response = wifi.wifi_connect(TELLO_SSID)
-
-        return response
-
-    except Exception as e:
-        logging.error(f"Error getting wifi state: {e}")  # 增加日志记录
         return JsonResponse({'status': 0, 'message': str(e)}, status=500)

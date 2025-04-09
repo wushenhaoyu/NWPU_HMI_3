@@ -522,30 +522,35 @@ import SystemInformation from './LandingPage/SystemInformation'
           })
         }, 250);
       },
-      wifiConnect()
-      {
-        this.fullscreenLoading = true;
-        this.$http.get('http://127.0.0.1:8000/wifi_connect')
-          .then(response => {
-            if (response.data.status == 1) {
-              this.fullscreenLoading = false;
-              this.$message({
-                message: '连接成功',
-                type: 'success'
-              });
-
+      wifiConnect() {
+    this.fullscreenLoading = true; // 开始加载动画
+    this.$http.get('http://127.0.0.1:8000/wifi_connect')
+        .then(response => {
+            const data = response.data; // 获取返回的 JSON 数据
+            if (data.status === 1) {
+                // 如果状态为 1，表示成功
+                this.$message({
+                    message: data.message, // 显示后端返回的成功消息
+                    type: 'success'
+                });
             } else {
-              this.$message({
-                message: '连接失败',
-                type: 'error'
-              });
+                // 如果状态为 0，表示失败
+                this.$message({
+                    message: data.message, // 显示后端返回的错误消息
+                    type: 'error'
+                });
             }
-          })
-          .catch(error => {
-            this.fullscreenLoading = false;
-            console.error(error);
-          })
-      },
+            this.fullscreenLoading = false; // 结束加载动画
+        })
+        .catch(error => {
+            this.fullscreenLoading = false; // 网络请求出错时结束加载动画
+            console.error(error); // 打印错误日志
+            this.$message({
+                message: '网络请求失败，请检查后端服务是否正常运行',
+                type: 'error'
+            });
+        });
+    },
 
       startProgress() {
       this.progress = 0; // 重置进度条
