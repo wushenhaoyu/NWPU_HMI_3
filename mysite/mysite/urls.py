@@ -21,11 +21,12 @@ from myapp import login,voice, drone,drone_control
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("video", login.video_feed, name="video"),#output
+
     
     # ---------登录部分---------#
-    path("turn_camera", login.turn_camera, name="turn"),
+    path("turn_pc_camera", login.turn_pc_camera, name="turn_pc_camera"),
     # path("turn_point", login.turn_point, name="turn_point"),
+    path("pc_video", login.video_feed, name="pc_video"),#output
     path("storage_face", login.storage_face, name="storage_face"),
     path("login_get_frame_info", login.get_frame_info, name="login_get_frame_info"),
 
@@ -38,6 +39,7 @@ urlpatterns = [
     # ---------无人机部分---------#
     # path("wifi_connect", drone.get_wifi_state, name="wifi_connect"),
     path("wifi_connect", drone.connect_drone, name="wifi_connect"),
+    path("turn_drone_camera", drone.turn_drone_camera, name="turn_drone_camera"),
     path("drone_video", drone.video_stream, name="drone_video"),
     path("get_current_state", drone.get_current_state, name="get_current_state"),
     # path("key_input", drone_control.key_input, name="key_input"),

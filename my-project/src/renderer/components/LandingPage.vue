@@ -13,7 +13,7 @@
               <img  style="height: 60%;width: 95%;object-fit: contain;" src="~@/assets/bg.png" alt="electron-vue" >
             </div>
             <div v-if="isShowImg2 && isLogin == 2">
-              <img   :src="imgurl2" alt="electron-vue" >
+              <img   :src="imgurl2" alt="electron-vue" style="width:100%;height:90%" >
             </div>
             <div v-if="!isShowImg2 && isLogin == 2">
               <img  style="height: 60%;width: 95%;object-fit: contain;" src="~@/assets/bg.png" alt="electron-vue" >
@@ -189,7 +189,7 @@
           <el-button type="primary" style="width: 80%;font-weight: 600;" @click="openCamera2">开启人脸跟随</el-button>
         </div>
         <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-          <el-button type="primary" style="width: 80%;font-weight: 600;" @click="openCamera">开启摄像头</el-button>
+          <el-button type="primary" style="width: 80%;font-weight: 600;" @click="openCamera2">开启摄像头</el-button>
         </div>
         </div>
         
@@ -390,8 +390,8 @@ import SystemInformation from './LandingPage/SystemInformation'
         timer: null,
         CurrentStateTimer: null,
         name:'',
-        imgurl1_:'http://localhost:8000/video',
-        imgurl2_:'http://localhost:8000/drone_vide',
+        imgurl1_:'http://localhost:8000/pc_video',
+        imgurl2_:'http://localhost:8000/drone_video',
         timestamp: Date.now(),
         move_speed: 10,
         fly_height: 100,
@@ -833,7 +833,7 @@ import SystemInformation from './LandingPage/SystemInformation'
     //       });
     // },
     openCamera1() {
-      this.$http.get('http://127.0.0.1:8000/turn_camera')
+      this.$http.get('http://127.0.0.1:8000/turn_pc_camera')
           .then(response => {
             if (response.data.status == 1) {
               this.isShowImg1 = true;
@@ -847,7 +847,7 @@ import SystemInformation from './LandingPage/SystemInformation'
           });
     },
     openCamera2() {
-      this.$http.get('http://127.0.0.1:8000/turn_camera')
+      this.$http.get('http://127.0.0.1:8000/turn_drone_camera')
           .then(response => {
             if (response.data.status == 1) {
               this.isShowImg2 = true;
