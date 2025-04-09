@@ -17,12 +17,12 @@
 
       </div>
       <div style="width: 30%;height: 90vh;"><div style="height: 4vh;"></div><div style="height: 86vh;background-color: #ffffff;border-radius: 1.5vw;">
-        <div v-if="isLogin == true"><!---->
-        <div style="text-align: center;font-weight: 900;line-height: 10vh;font-size: 25px;">控制面板</div>
+        <div v-if="isLogin == 1"><!---->
+        <div style="text-align: center;font-weight: 900;line-height: 10vh;font-size: 25px;">地面站面板</div>
         <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-          <el-select v-model="value" placeholder="模式选择" @change="change">
+          <el-select v-model="value1" placeholder="模式选择" @change="change">
             <el-option
-              v-for="item in options"
+              v-for="item in options1"
               :key="item.value"
               :label="item.label"
               :value="item.value">
@@ -32,7 +32,7 @@
 
                    <!---------------------------------------------------------->
 
-        <div v-if="value==1">
+        <div v-if="value1==1">
 
 
                 <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;"
@@ -62,71 +62,9 @@
         </div>
 
 
-                   <!---------------------------------------------------------->
-        <div v-if="value==2">
-          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;" @click="openEye" >
-          <div style="width: 40%;text-align: center;">眨眼检测</div>
-          <el-switch
-          v-model="isEye"
-          active-text="开启"
-          inactive-text="关闭"
-          >
-          </el-switch>
-          </div>
-
-                <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;"
-                     @click="openMouth">
-                  <div style="width: 40%;text-align: center;">张嘴检测</div>
-                  <el-switch
-                      v-model="isMouth"
-                      active-text="开启"
-                      inactive-text="关闭">
-                  </el-switch>
-                </div>
-
-                <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;"
-                     @click="openHead">
-                  <div style="width: 40%;text-align: center;">摇头检测</div>
-                  <el-switch
-                      v-model="isHead"
-                      active-text="开启"
-                      inactive-text="关闭">
-                  </el-switch>
-                </div>
-
-                <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-                  <div style="width: 40%;text-align: center;">眨眼次数：</div>
-                  <div style="width: 32%;text-align: center;">{{ EyeCount }}</div>
-                </div>
-
-                <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-                  <div style="width: 40%;text-align: center;">张嘴次数：</div>
-                  <div style="width: 32%;text-align: center;">{{ MouthCount }}</div>
-                </div>
-
-                <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-                  <div style="width: 40%;text-align: center;">左摇头次数：</div>
-                  <div style="width: 32%;text-align: center;">{{ HeadLeftCount }}</div>
-                </div>
-
-                <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-                  <div style="width: 40%;text-align: center;">右摇头次数：</div>
-                  <div style="width: 32%;text-align: center;">{{ HeadRightCount }}</div>
-                </div>
-
-                <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-                  <div style="width: 40%;text-align: center;">摇头次数：</div>
-                  <div style="width: 32%;text-align: center;">{{ HeadShakeCount }}</div>
-                </div>
-
-
-                <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-                  <el-button type="primary" style="width: 80%;font-weight: 600;" @click="reset_count">重置计数</el-button>
-                </div>
-
            <!---------------------------------------------------------->
-        </div>
-              <div v-if="value==3">
+        
+              <div v-if="value1==2">
                 <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;"
                      @click="openHand">
                   <div style="width: 40%;text-align: center;">手势识别</div>
@@ -136,7 +74,7 @@
                       inactive-text="关闭">
                   </el-switch>
                 </div>
-                <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;"
+                <!---<div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;"
                      @click="openHandPoint">
                   <div style="width: 40%;text-align: center;">关键点显示</div>
                   <el-switch
@@ -154,101 +92,11 @@
                       active-text="开启"
                       inactive-text="关闭">
                   </el-switch>
-                </div>
+                </div>-->
               </div>
 
               <!---------------------------------------------------------->
-        <div v-if="value==4">
-          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;"
-                     @click="openVoice">
-                  <div style="width: 40%;text-align: center;">使能语音控制</div>
-                  <el-switch
-                      v-model="isVoice"
-                      active-text="开启"
-                      inactive-text="关闭">
-                  </el-switch>
-                </div>
-
-
-
-          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;font-size: 4vh;"> <div style="width: 40%;text-align: center;">当前指令</div>{{ getVoiceAction }}</div>
-          
-          <div style="height: 35vh;"></div>
-          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: center;"
-                     >
-                     <el-progress style="width: 80%;" :percentage="progress" :status="progressStatus"  :text-inside="true" :stroke-width="26"/>
-                </div>
-
-  
-          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-
-              <el-button type="primary" style="width: 80%;font-weight: 600;" @click="recordVoice" :disabled="!isVoice">开始录音</el-button>
-           
-
-          </div>
-        </div>
-           <!---------------------------------------------------------->
-
-        <div v-if="value==5">
-                <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('takeoff')" >起飞</el-button>
-                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('land')" >降落</el-button>
-                </div>
-
-                <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('up')" >上升</el-button>
-                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('down')" >下降</el-button>
-                </div>
-          
-                <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('forward')" >前进</el-button>
-                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('back')" >后退</el-button>
-                </div>
-
-                <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('left')" >左移</el-button>
-                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('right')" >右移</el-button>
-                </div>
-
-                <!--<div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('')" >前翻</el-button>
-                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('')" >后翻</el-button>
-                </div>
-
-                <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('')" >上翻</el-button>
-                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('')" >下翻</el-button>
-                </div>-->
-
-                <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('rotate_left')" >左旋</el-button>
-                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('rotate_right')" >右旋</el-button>
-                </div>
-        </div>
-           <!---------------------------------------------------------->
-           <div v-if="value==6">
-
-            <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;line-height: 7vh;font-size: 2.5vh;"> 
-              <div style="width: 35%;text-align: center;">移动速度cm/s</div><el-input-number v-model="move_speed"  :min="10" :max="20" label="描述文字"></el-input-number>
-            </div>
-
-            <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;line-height: 7vh;font-size: 2.5vh;"> 
-              <div style="width: 35%;text-align: center;">飞行高度cm</div><el-input-number v-model="fly_height"  :min="50" :max="200" label="描述文字"></el-input-number>
-            </div>
-
-
-
-
-            <div style="height: 20vh;"></div>
-
-            <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-            <el-button type="primary" style="width: 80%;font-weight: 600;" @click="recordVoice" >设置</el-button>
-            </div>
-
-
-           </div>
-           <!---------------------------------------------------------->
-        <div v-if="value==7">
+          <div v-if="value1==3">
           
           <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
             <div style="width: 40%;text-align: center;">电池电量：</div>
@@ -284,7 +132,7 @@
             <div style="width: 32%;text-align: center;">{{currentState.pitch}}°</div>
           </div>
 
-          <div style="height: 10vh;"></div>
+          <div style="height: 8vh;"></div>
 
 
 
@@ -292,14 +140,197 @@
           <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
             <el-button type="primary" style="width: 80%;font-weight: 600;" @click="wifiConnect"  v-loading.fullscreen.lock="fullscreenLoading">连接无人机</el-button>
           </div>
+
+          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+            <el-button type="primary" style="width: 80%;font-weight: 600;" @click="switchboard" >切换至无人机</el-button>
+          </div>
+
+
+
+
           
           
         </div>
+        <!---------------------------------------------------------->
+
+
+      
 
         </div>
 
+        <div v-if="isLogin == 2"><!---->
+        <div style="text-align: center;font-weight: 900;line-height: 10vh;font-size: 25px;">无人机面板</div>
+        <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+          <el-select v-model="value2" placeholder="模式选择" @change="change">
+            <el-option
+              v-for="item in options2"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value">
+            </el-option>
+          </el-select>
+        </div>
 
-        <div v-else>
+                   <!---------------------------------------------------------->
+
+        <div v-if="value2==1">
+
+
+                <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;"
+                     @click="openPoint">
+                  <div style="width: 40%;text-align: center;">关键点显示</div>
+                  <el-switch
+                      v-model="isPoint"
+                      active-text="开启"
+                      inactive-text="关闭">
+                  </el-switch>
+                </div>
+
+
+          <div style="height: 20vh;"></div>
+          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+            <el-input style="width: 80%;" v-model="name" placeholder="请输入名字"></el-input>
+        </div>
+        <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+          <el-button type="primary" style="width: 80%;font-weight: 600;" @click="storageFace">录入人脸</el-button>
+        </div>
+        <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+          <el-button type="primary" style="width: 80%;font-weight: 600;" @click="openCamera">开启摄像头</el-button>
+        </div>
+        <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+          <el-button type="primary" style="width: 80%;font-weight: 600;" @click="redirectToAdmin" >人脸管理</el-button>
+        </div>
+        </div>
+        
+
+           <!---------------------------------------------------------->
+        
+
+              <!---------------------------------------------------------->
+        <div v-if="value2==2">
+          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;"
+                     @click="openVoice">
+                  <div style="width: 40%;text-align: center;">使能语音控制</div>
+                  <el-switch
+                      v-model="isVoice"
+                      active-text="开启"
+                      inactive-text="关闭">
+                  </el-switch>
+                </div>
+
+
+
+          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;font-size: 4vh;"> <div style="width: 40%;text-align: center;">当前指令</div>{{ getVoiceAction }}</div>
+          
+          <div style="height: 35vh;"></div>
+          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: center;"
+                     >
+                     <el-progress style="width: 80%;" :percentage="progress" :status="progressStatus"  :text-inside="true" :stroke-width="26"/>
+                </div>
+
+  
+          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+
+              <el-button type="primary" style="width: 80%;font-weight: 600;" @click="recordVoice" :disabled="!isVoice">开始录音</el-button>
+           
+
+          </div>
+        </div>
+           <!---------------------------------------------------------->
+
+        <div v-if="value2==3">
+                <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('takeoff')" >起飞</el-button>
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('land')" >降落</el-button>
+                </div>
+
+                <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('up')" >上升</el-button>
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('down')" >下降</el-button>
+                </div>
+          
+                <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('forward')" >前进</el-button>
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('back')" >后退</el-button>
+                </div>
+
+                <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('left')" >左移</el-button>
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('right')" >右移</el-button>
+                </div>
+
+                <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('rotate_left')" >左旋</el-button>
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('rotate_right')" >右旋</el-button>
+                </div>
+
+                
+            <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;line-height: 7vh;font-size: 2.5vh;"> 
+              <div style="width: 35%;text-align: center;">移动速度cm/s</div><el-input-number v-model="move_speed"  :min="10" :max="20" label="描述文字"></el-input-number>
+            </div>
+
+
+            <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+            <el-button type="primary" style="width: 80%;font-weight: 600;" @click="recordVoice" >设置</el-button>
+            </div>
+        </div>
+           <!---------------------------------------------------------->
+        <div v-if="value2==4">
+          
+          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+            <div style="width: 40%;text-align: center;">电池电量：</div>
+            <div style="width: 32%;text-align: center;">{{currentState.bat}}%</div>
+          </div>
+          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+            <div style="width: 40%;text-align: center;">飞行高度：</div>
+            <div style="width: 32%;text-align: center;">{{currentState.h}}cm</div>
+          </div>
+
+          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+            <div style="width: 40%;text-align: center;">飞行时间：</div>
+            <div style="width: 32%;text-align: center;">{{currentState.time}}s</div>
+          </div>
+
+          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+            <div style="width: 40%;text-align: center;">信号强度：</div>
+            <div style="width: 32%;text-align: center;">{{currentState.wifi}}s</div>
+          </div>
+
+          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+            <div style="width: 40%;text-align: center;">加速度：</div>
+            <div style="width: 32%;text-align: center;">({{currentState.agx}},{{currentState.agy}},{{currentState.agz}})</div>
+          </div>
+
+          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+            <div style="width: 40%;text-align: center;">速度：</div>
+            <div style="width: 32%;text-align: center;">({{currentState.vgx}},{{currentState.vgy}},{{currentState.vgz}})</div>
+          </div>
+
+          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+            <div style="width: 40%;text-align: center;">航向角</div>
+            <div style="width: 32%;text-align: center;">{{currentState.pitch}}°</div>
+          </div>
+
+          <div style="height: 8vh;"></div>
+
+
+
+
+          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+            <el-button type="primary" style="width: 80%;font-weight: 600;" @click="wifiConnect"  v-loading.fullscreen.lock="fullscreenLoading">连接无人机</el-button>
+          </div>
+
+          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+            <el-button type="primary" style="width: 80%;font-weight: 600;" @click="switchboard" >切换至地面站</el-button>
+          </div>
+
+        </div>
+
+      </div>
+
+
+
+        <div v-if="isLogin == 0">
         <div style="text-align: center;font-weight: 900;line-height: 10vh;font-size: 25px;">系统登录</div>
 
         <div><img src="~@/assets/lg.png" alt="electron-vue" style="width: 80%;margin-left: 10%;"></div>
@@ -342,7 +373,7 @@ import SystemInformation from './LandingPage/SystemInformation'
       return {
         //
         fullscreenLoading: false,
-        isLogin: false,
+        isLogin: 2,
         EyeCount : 0,
         MouthCount : 0,
         HeadLeftCount : 0,
@@ -389,30 +420,35 @@ import SystemInformation from './LandingPage/SystemInformation'
           agz: 0.0,  
           wifi: 0 , 
         },
-        options: [{
+        options1: [{
           value: 1,
           label: '人脸操作'
         }, {
-          value: 3,
+          value: 2,
           label: '手势控制'
         },
         {
-          value: 4,
+          value: 3,
+          label: '无人机状态'
+        }],
+        options2: [{
+          value: 1,
+          label: '人脸操作'
+        },
+        {
+          value: 2,
           label: '语音控制'
         },
         {
-          value: 5,
+          value: 3,
           label: '键盘控制'
         },
         {
-          value: 6,
-          label: '飞行参数'
-        },
-        {
-          value: 7,
+          value: 4,
           label: '无人机状态'
         }],
-        value: 1
+        value1: 1,
+        value2: 1
       }
     },
     mounted () {
@@ -444,6 +480,18 @@ import SystemInformation from './LandingPage/SystemInformation'
       //
     },
     methods: {
+
+      switchboard()
+      {
+          if(this.isLogin == 1)
+          {
+            this.isLogin = 2
+          }else if(this.isLogin == 2)
+          {
+            this.isLogin = 1
+          }
+          console.log(this.isLogin)
+      },
       getCurrentState(){
         this.data.CurrentStateTimer = setInterval(() => {
           this.$http.get('http://127.0.0.1:8000/get_current_state').then(response => {
@@ -809,7 +857,7 @@ import SystemInformation from './LandingPage/SystemInformation'
               message: '认证成功',
               type: 'info'
             });
-            this.isLogin = true;
+            this.isLogin = 1;
             return;
           }else {
             this.$message({
