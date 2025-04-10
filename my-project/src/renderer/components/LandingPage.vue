@@ -70,40 +70,30 @@
         </div>
 
 
-           <!---------------------------------------------------------->
-        
-              <div v-if="value1===2">
-                <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;"
-                     @click="openHand">
-                  <div style="width: 40%;text-align: center;">手势识别</div>
-                  <el-switch
-                      v-model="isHand"
-                      active-text="开启"
-                      inactive-text="关闭">
-                  </el-switch>
+        <!---------------------------------------------------------->
+    
+          <div v-if="value1===2">
+            <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;"
+                  @click="openHand">
+              <div style="width: 40%;text-align: center;">手势识别</div>
+              <el-switch
+                  v-model="isHand"
+                  active-text="开启"
+                  inactive-text="关闭">
+              </el-switch>
+            </div>
+            
+            <!-- 手势命令照片展示 -->
+              <div style="margin-top: 2vh; display: flex; flex-wrap: wrap; justify-content: space-evenly; gap: 1vw;">
+                <div v-for="(gesture, index) in gestureImages" :key="index" style="width: 30%; text-align: center;">
+                  <img :src="gesture.src" :alt="gesture.name" style="width: 100%; border-radius: 1vw;"/>
+                  <div style="margin-top: 0.5vh; font-weight: 600;">{{ gesture.name }}</div>
                 </div>
-                <!---<div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;"
-                     @click="openHandPoint">
-                  <div style="width: 40%;text-align: center;">关键点显示</div>
-                  <el-switch
-                      v-model="isHandPoint"
-                      active-text="开启"
-                      inactive-text="关闭">
-                  </el-switch>
-                </div>
-
-                <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;"
-                     @click="openPoint">
-                  <div style="width: 40%;text-align: center;">手势控制</div>
-                  <el-switch
-                      v-model="isPoint"
-                      active-text="开启"
-                      inactive-text="关闭">
-                  </el-switch>
-                </div>-->
               </div>
 
-              <!---------------------------------------------------------->
+          </div>
+
+          <!---------------------------------------------------------->
           <div v-if="value1===3">
           
           <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
@@ -247,7 +237,7 @@
 
                 <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
                   <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('forward')" >前进</el-button>
-                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('back')" >后退</el-button>
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('backward')" >后退</el-button>
                 </div>
 
                 <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
@@ -661,7 +651,6 @@ import SystemInformation from './LandingPage/SystemInformation'
       },
       // 前端按键按下控制无人机动作
       sendCommand(command) {
-        // this.$http.post('http://127.0.0.1:8000/key_input', { request_key: command })
         this.$http.post('http://127.0.0.1:8000/drone_control', { command: command })
             .then(response => {
                 console.log(response.data);
@@ -862,11 +851,18 @@ import SystemInformation from './LandingPage/SystemInformation'
           .then(response => {
             if (response.data.status === 1) {
               this.$data.isHand = true;
+              this.$message.success(response.data.message);
             } else {
               this.$data.isHand = false;
+              this.$message.error(response.data.message);
             }
+            
             console.log(response.data, this.isHand);
           })
+          .catch(error => {
+            console.error(error);
+            this.$message.error('手势检测操作失败');
+          });
     },
     // openHandPoint() {
     //   this.$http.get('http://127.0.0.1:8000/turn_hand_point')

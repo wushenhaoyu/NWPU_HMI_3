@@ -298,10 +298,11 @@ TELLO_SSID = "TELLO-FDDA9E"
 CTRL_MAP = {
     "takeoff": '起飞',
     "land": '降落',
+    "stop": '停止',
     "up": '上升',
     "down": '下降',
     "forward": '前进',
-    "back": '后退',
+    "backward": '后退',
     "left": '左移',
     "right": '右移',
     "rotate_left": '向左转',
@@ -313,7 +314,7 @@ CTRL_MAP = {
 class Drone:
     def __init__(self):
         self.tello = None
-        self._is_connected = False
+        self.is_connected = False
         self.frame = None
         self.lock = threading.Lock()
         self.isOpenDroneCamera = False
@@ -333,23 +334,23 @@ class Drone:
             try:
                 self.tello = Tello()
                 self.tello.connect()
-                self._is_connected = True
+                self.is_connected = True
                 logging.info("无人机连接成功")
                 return True
             except Exception as e:
                 logging.error(f"连接失败: {e}")
-                self._is_connected = False
+                self.is_connected = False
                 return False
 
     def is_connected(self):
         """返回连接状态"""
         with self.lock:
-            return self._is_connected
+            return self.is_connected
 
     def get_frame(self):
         """获取视频帧"""
         with self.lock:
-            if not self._is_connected or not self.isOpenDroneCamera:
+            if not self.is_connected or not self.isOpenDroneCamera:
                 return None
 
             try:
@@ -364,7 +365,7 @@ class Drone:
     def control(self, command):
         """执行控制命令"""
         with self.lock:
-            if not self._is_connected:
+            if not self.is_connected:
                 return {'status': 0, 'message': '无人机未连接'}
 
             try:
@@ -372,6 +373,8 @@ class Drone:
                 self.lr = self.fb = self.ud = self.yv = 0
 
                 # 处理特殊命令
+                if command == "stop" or command == "":
+                    return
                 if command == "takeoff":
                     self.tello.takeoff()
                     return {'status': 1, 'message': CTRL_MAP[command]}
@@ -384,7 +387,7 @@ class Drone:
                     "left": (-self.channel_rod, 0, 0, 0),
                     "right": (self.channel_rod, 0, 0, 0),
                     "forward": (0, self.channel_rod, 0, 0),
-                    "back": (0, -self.channel_rod, 0, 0),
+                    "backward": (0, -self.channel_rod, 0, 0),
                     "up": (0, 0, self.channel_rod, 0),
                     "down": (0, 0, -self.channel_rod, 0),
                     "rotate_left": (0, 0, 0, self.channel_rod),
@@ -412,7 +415,7 @@ class Drone:
     def get_battery(self):
         """获取电池电量"""
         with self.lock:
-            return self.tello.get_battery() if self._is_connected else 0
+            return self.tello.get_battery() if self.is_connected else 0
 
     def get_current_state(self):
         """获取无人机当前状态"""
@@ -427,14 +430,13 @@ class Drone:
     def disconnect(self):
         """断开连接"""
         with self.lock:
-            if self._is_connected:
+            if self.is_connected:
                 self.tello.streamoff()
                 self.tello.end()
-                self._is_connected = False
+                self.is_connected = False
                 logging.info("无人机断开连接")
 
 
-# ================ Django 视图函数 ================
 @csrf_exempt
 def connect_drone(request):
     """连接无人机视图"""
@@ -482,7 +484,6 @@ def disconnect_drone(request):
 def control(request):
     """控制指令视图"""
     if not global_drone or not global_drone.is_connected():
-        print('111')
         return JsonResponse({'status': 0, 'message': '无人机未连接'})
 
     try:
@@ -492,7 +493,8 @@ def control(request):
         if not command:
             return JsonResponse({'status': 0, 'message': '无效指令'})
 
-        return JsonResponse(global_drone.control(command))
+        response = global_drone.control(command)
+        return JsonResponse(response)
     except Exception as e:
         logging.error(f"处理控制指令时出错: {e}")
         return JsonResponse({'status': 0, 'message': str(e)})

@@ -15,7 +15,7 @@ logging.basicConfig(
 ROI_WIDTH_RATIO = 1.5
 ROI_HEIGHT_RATIO = 1.5
 ROI_OFFSET_X_RATIO = 0.5  # 正数表示右侧偏移
-ROI_OFFSET_Y_RATIO = 0.2
+ROI_OFFSET_Y_RATIO = -0.6
 
 mp_hands = mp.solutions.hands
 mp_drawing = mp.solutions.drawing_utils
@@ -59,19 +59,29 @@ def get_gesture(image, lms_list):
             up_fingers.append(i)
 
     if len(up_fingers) == 0:
-        return "FIST"
-    elif len(up_fingers) == 1 and up_fingers[0] == 4:
-        return "GOOD"
-    elif len(up_fingers) == 1 and up_fingers[0] == 12:
-        return "BAD"
-    elif len(up_fingers) == 1 and up_fingers[0] == 8:
-        return "1"
-    elif len(up_fingers) == 2 and up_fingers[0] == 8 and up_fingers[1] == 12:
-        return "2"
+        return "takeoff"
+    elif len(up_fingers) == 3 and up_fingers[0] == 4 and up_fingers[1] == 8 and up_fingers[2] == 20:
+        return "land"
     elif len(up_fingers) == 5:
-        return "5"
+        return "stop"
+    elif len(up_fingers) == 1 and up_fingers[0] == 4:
+        return "left"
+    elif len(up_fingers) == 1 and up_fingers[0] == 20:
+        return "right"
+    elif len(up_fingers) == 1 and up_fingers[0] == 8:
+        return "up"
+    elif len(up_fingers) == 2 and up_fingers[0] == 8 and up_fingers[1] == 12:
+        return "down"
+    elif len(up_fingers) == 2 and up_fingers[0] == 4 and up_fingers[1] == 8 :
+        return "forward"
+    elif len(up_fingers) == 3 and up_fingers[0] == 4 and up_fingers[1] == 8 and up_fingers[2] == 12:
+        return "backward"
+    elif len(up_fingers) == 3 and up_fingers[0] == 8 and up_fingers[1] == 12 and up_fingers[2] == 16:
+        return "rotate_left"
+    elif len(up_fingers) == 4 and up_fingers[0] == 8 and up_fingers[1] == 12 and up_fingers[2] == 16 and up_fingers[3] == 20:
+        return "rotate_right"
     else:
-        return " "
+        return ""
 
 
 def get_hand_roi(frame, bbox):
@@ -102,6 +112,7 @@ def hand_recognize(frame, bbox):
 
     :return 绘制了手部ROI框和手势名称的画面
     """
+    final_gesture = ""
     try:
         roi_x, roi_y, roi_w, roi_h = get_hand_roi(frame, bbox)
         cv2.rectangle(frame, (roi_x, roi_y), (roi_x + roi_w, roi_y + roi_h), (255, 0, 0),2)
@@ -110,13 +121,13 @@ def hand_recognize(frame, bbox):
         # cv2.imshow("hand_roi", hand_roi)
         if hand_roi.size == 0:
             print("hand_roi is empty")
-            return frame
+            return frame, ""
 
         hand_roi = cv2.cvtColor(hand_roi, cv2.COLOR_BGR2RGB)
         hand_results = hands_detection.process(hand_roi)
         if not hand_results.multi_hand_landmarks:
             # logging.warning("No hand landmarks detected")
-            return frame
+            return frame, ""
 
         for idx, hand_landmarks in enumerate(hand_results.multi_hand_landmarks):
             # 转换坐标到原始图像
@@ -149,11 +160,11 @@ def hand_recognize(frame, bbox):
                             cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.6,
                             color=(0, 0, 255), thickness=2)
 
-        return frame
+        return frame, final_gesture
 
     except Exception as e:
         logging.warning(f"hand_recognize error: {e}")
-        return frame
+        return frame, ""
 
 
 

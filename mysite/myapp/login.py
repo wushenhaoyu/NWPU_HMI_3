@@ -1,7 +1,6 @@
 import json
 import os
 import threading
-
 from django.http import JsonResponse, StreamingHttpResponse
 import cv2
 import insightface
@@ -15,6 +14,7 @@ import re
 import time
 import logging
 from myapp.hand_process import *
+from myapp.drone import global_drone
 
 logging.basicConfig(
     level=logging.INFO,
@@ -84,11 +84,7 @@ class FaceLogin:
         self.embedding = []
 
         self.frame = None
-        self.label = "" # 手势名称标签
-
-        # 新增标志位，指示是否应该继续处理帧
-        # 解决开摄像头、关闭后，get_frame_info继续运行再次打开摄像头
-        self.isProcessingFrame = False
+        self.label = ""  # 手势名称标签
 
         self.lock = threading.Lock()
 
@@ -242,7 +238,7 @@ class FaceLogin:
     def get_frame(self):
         """获取视频帧"""
         if not self.isProcessingFrame:
-            return None, 0, False
+            return None
         try:
             with self.lock:
                 ret, frame = self.cap.read()
@@ -250,10 +246,10 @@ class FaceLogin:
                     logging.warning("无法从PC摄像头中获取画面")
                     return None, 0, False
                 self.frame = cv2.flip(frame, 1)
-                return self.frame, 0, False
+                return self.frame
         except Exception as e:
             logging.error(f"获取视频帧时发生错误: \n{e}")
-            return None, 0, False
+            return None
 
     def recognize_faces(self, frame):
         """人脸识别"""
@@ -310,7 +306,8 @@ class FaceLogin:
                                           (0, 255, 0), 2)
 
                             if self.isHandRecognize:
-                                frame = hand_recognize(frame, bbox)
+                                frame, self.label = hand_recognize(frame, bbox)
+                                self.get_gesture_ctrl()
 
                             # 其他人统一标红
                             for face in face_results[1:]:
@@ -337,7 +334,7 @@ class FaceLogin:
 
     def get_frame_info(self):
         """获取视频帧并进行人脸识别"""
-        frame, _, _ = self.get_frame()
+        frame = self.get_frame()
         if frame is None:
             return None, 0, False
         frame, face_count, face_exists = self.recognize_faces(frame)
@@ -347,15 +344,19 @@ class FaceLogin:
         else:
             return None, 0, False
 
+    def get_gesture_ctrl(self):
+        """手势控制无人机"""
+        try:
+            global_drone.tello.control(self.label)
+        except Exception as e:
+            logging.error(f"手势控制无人机时发生错误: \n{e}")
+
 
 camera = FaceLogin()
 
 
 def gen(camera):
     while True:
-        # if not camera.isProcessingFrame:
-        #     time.sleep(0.1)  # 等待一段时间后再次检查
-        #     continue
         frame, face_count, face_exists = camera.get_frame_info()
         if frame is not None:
             yield (b'--frame\r\n'
@@ -387,6 +388,12 @@ def turn_pc_camera(request):
 
 def turn_hand(request):
     try:
+        # 检查无人机是否连接
+        if global_drone is None or not global_drone.is_connected():
+            camera.isHandRecognize = False
+            return JsonResponse({'status': 0, 'message': '无人机未连接，无法开启手势检测'})
+
+
         if camera.isHandRecognize:
             camera.isHandRecognize = False
             return JsonResponse({'status': 0, 'message': '关闭手势检测'})
