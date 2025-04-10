@@ -518,7 +518,10 @@ import SystemInformation from './LandingPage/SystemInformation'
               });
               clearInterval(this.CurrentStateTimer) 
             }
-          })
+          }).catch(error => {
+          console.error(error);
+          clearInterval(this.CurrentStateTimer); // 处理网络错误时也清除定时器
+        });
         }, 250);
       },
       wifiConnect()
