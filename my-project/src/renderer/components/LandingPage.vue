@@ -4,26 +4,26 @@
   <el-main style="background-color: #e9eef3;border-radius: 1.5vw;">
     <div style="display: flex;">    
       <div style="width: 70%;">
-        <div style="height: 100%;width: 100%;">
+        <div style="height: 100%;width: 98%;">
           <div style="text-align: center;font-size: larger;font-weight: 900;color: black;background-color: #e9eef3; height: 5vh;line-height: 5vh;">摄像头画面</div>
-            <div v-if="isShowImg1 && isLogin != 2">            
-              <img   :src="imgurl1" alt="electron-vue" >
+            <div v-if="isShowImg1 && isLogin !== 2">
+              <img   :src="imgurl1" alt="electron-vue" style="width:100%;height:90%">
             </div>
-            <div v-if="!isShowImg1 && isLogin != 2">
-              <img  style="height: 60%;width: 95%;object-fit: contain;" src="~@/assets/bg.png" alt="electron-vue" >
+            <div v-if="!isShowImg1 && isLogin !== 2">
+              <img  style="height: 100%;width: 100%;object-fit: contain;" src="~@/assets/bg.png" alt="electron-vue" >
             </div>
-            <div v-if="isShowImg2 && isLogin == 2">
+            <div v-if="isShowImg2 && isLogin === 2">
               <img   :src="imgurl2" alt="electron-vue" style="width:100%;height:90%" >
             </div>
-            <div v-if="!isShowImg2 && isLogin == 2">
-              <img  style="height: 60%;width: 95%;object-fit: contain;" src="~@/assets/bg.png" alt="electron-vue" >
+            <div v-if="!isShowImg2 && isLogin === 2">
+              <img  style="height: 100%;width: 100%;object-fit: contain;" src="~@/assets/bg.png" alt="electron-vue" >
             </div>
           </div>
 
 
       </div>
       <div style="width: 30%;height: 90vh;"><div style="height: 4vh;"></div><div style="height: 86vh;background-color: #ffffff;border-radius: 1.5vw;">
-        <div v-if="isLogin == 1"><!---->
+        <div v-if="isLogin === 1"><!---->
         <div style="text-align: center;font-weight: 900;line-height: 10vh;font-size: 25px;">地面站面板</div>
         <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
           <el-select v-model="value1" placeholder="模式选择" @change="change">
@@ -38,7 +38,7 @@
 
                    <!---------------------------------------------------------->
 
-        <div v-if="value1==1">
+        <div v-if="value1===1">
 
 
                 <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;"
@@ -60,7 +60,9 @@
           <el-button type="primary" style="width: 80%;font-weight: 600;" @click="storageFace">录入人脸</el-button>
         </div>
         <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-          <el-button type="primary" style="width: 80%;font-weight: 600;" @click="openCamera1">开启摄像头</el-button>
+          <el-button type="primary" style="width: 80%;font-weight: 600;" @click="openCamera1">
+            {{isPcCameraOpen ? '关闭' : '打开'}}电脑摄像头
+          </el-button>
         </div>
         <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
           <el-button type="primary" style="width: 80%;font-weight: 600;" @click="redirectToAdmin" >人脸管理</el-button>
@@ -70,7 +72,7 @@
 
            <!---------------------------------------------------------->
         
-              <div v-if="value1==2">
+              <div v-if="value1===2">
                 <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;"
                      @click="openHand">
                   <div style="width: 40%;text-align: center;">手势识别</div>
@@ -102,7 +104,7 @@
               </div>
 
               <!---------------------------------------------------------->
-          <div v-if="value1==3">
+          <div v-if="value1===3">
           
           <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
             <div style="width: 40%;text-align: center;">电池电量：</div>
@@ -144,7 +146,9 @@
 
 
           <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-            <el-button type="primary" style="width: 80%;font-weight: 600;" @click="wifiConnect"  v-loading.fullscreen.lock="fullscreenLoading">连接无人机</el-button>
+            <el-button type="primary" style="width: 80%;font-weight: 600;" @click="toggleDroneConnection"  v-loading.fullscreen.lock="fullscreenLoading">
+              {{ isDroneConnected ? '断开无人机链接' : '连接无人机' }}
+            </el-button>
           </div>
 
           <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
@@ -154,17 +158,17 @@
 
 
 
-          
-          
+
+
         </div>
         <!---------------------------------------------------------->
 
 
-      
+
 
         </div>
 
-        <div v-if="isLogin == 2"><!---->
+        <div v-if="isLogin === 2"><!---->
         <div style="text-align: center;font-weight: 900;line-height: 10vh;font-size: 25px;">无人机面板</div>
         <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
           <el-select v-model="value2" placeholder="模式选择" @change="change">
@@ -179,7 +183,7 @@
 
                    <!---------------------------------------------------------->
 
-        <div v-if="value2==1">
+        <div v-if="value2===1">
 
 
 
@@ -189,16 +193,17 @@
           <el-button type="primary" style="width: 80%;font-weight: 600;" @click="openCamera2">开启人脸跟随</el-button>
         </div>
         <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-          <el-button type="primary" style="width: 80%;font-weight: 600;" @click="openCamera2">开启摄像头</el-button>
+          <el-button type="primary" style="width: 80%;font-weight: 600;" @click="openCamera2">
+            {{isDroneCameraOpen ? '关闭' : '打开'}}无人机摄像头</el-button>
         </div>
         </div>
-        
+
 
            <!---------------------------------------------------------->
-        
+
 
               <!---------------------------------------------------------->
-        <div v-if="value2==2">
+        <div v-if="value2===2">
           <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;"
                      @click="openVoice">
                   <div style="width: 40%;text-align: center;">使能语音控制</div>
@@ -212,24 +217,24 @@
 
 
           <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;font-size: 4vh;"> <div style="width: 40%;text-align: center;">当前指令</div>{{ getVoiceAction }}</div>
-          
+
           <div style="height: 35vh;"></div>
           <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: center;"
                      >
                      <el-progress style="width: 80%;" :percentage="progress" :status="progressStatus"  :text-inside="true" :stroke-width="26"/>
                 </div>
 
-  
+
           <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
 
               <el-button type="primary" style="width: 80%;font-weight: 600;" @click="recordVoice" :disabled="!isVoice">开始录音</el-button>
-           
+
 
           </div>
         </div>
            <!---------------------------------------------------------->
 
-        <div v-if="value2==3">
+        <div v-if="value2===3">
                 <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
                   <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('takeoff')" >起飞</el-button>
                   <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('land')" >降落</el-button>
@@ -239,7 +244,7 @@
                   <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('up')" >上升</el-button>
                   <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('down')" >下降</el-button>
                 </div>
-          
+
                 <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
                   <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('forward')" >前进</el-button>
                   <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('back')" >后退</el-button>
@@ -255,8 +260,8 @@
                   <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('rotate_right')" >右旋</el-button>
                 </div>
 
-                
-            <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;line-height: 7vh;font-size: 2.5vh;"> 
+
+            <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;line-height: 7vh;font-size: 2.5vh;">
               <div style="width: 35%;text-align: center;">移动速度cm/s</div>
               <el-input-number v-model="move_speed"  :min="10" :max="20" label="描述文字"></el-input-number>
             </div>
@@ -267,8 +272,8 @@
             </div>
         </div>
            <!---------------------------------------------------------->
-        <div v-if="value2==4">
-          
+        <div v-if="value2===4">
+
           <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
             <div style="width: 40%;text-align: center;">电池电量：</div>
             <div style="width: 32%;text-align: center;">{{currentState.bat}}%</div>
@@ -309,7 +314,9 @@
 
 
           <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-            <el-button type="primary" style="width: 80%;font-weight: 600;" @click="wifiConnect"  v-loading.fullscreen.lock="fullscreenLoading">连接无人机</el-button>
+            <el-button type="primary" style="width: 80%;font-weight: 600;" @click="toggleDroneConnection"  v-loading.fullscreen.lock="fullscreenLoading">
+              {{ isDroneConnected ? '断开无人机链接' : '连接无人机' }}
+            </el-button>
           </div>
 
           <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
@@ -322,7 +329,7 @@
 
 
 
-        <div v-if="isLogin == 0">
+        <div v-if="isLogin === 0">
         <div style="text-align: center;font-weight: 900;line-height: 10vh;font-size: 25px;">系统登录</div>
 
         <div><img src="~@/assets/lg.png" alt="electron-vue" style="width: 80%;margin-left: 10%;"></div>
@@ -337,7 +344,9 @@
           <el-button type="primary" style="width: 80%;font-weight: 600;" @click="login">登录</el-button>
         </div>
         <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-          <el-button type="primary" style="width: 80%;font-weight: 600;" @click="openCamera1">开启摄像头</el-button>
+          <el-button type="primary" style="width: 80%;font-weight: 600;" @click="openCamera1">
+            {{isPcCameraOpen ? '关闭' : '打开'}}电脑摄像头
+          </el-button>
         </div>
         <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
           <el-button type="primary" style="width: 80%;font-weight: 600;" @click="redirectToAdmin" >人脸管理</el-button>
@@ -348,7 +357,7 @@
       </div><!---->
 
 
-      </div> 
+      </div>
     </div>
   </el-main>
 </el-container>
@@ -366,23 +375,26 @@ import SystemInformation from './LandingPage/SystemInformation'
         //
         fullscreenLoading: false,
         isLogin: 2,
-        EyeCount : 0,
-        MouthCount : 0,
-        HeadLeftCount : 0,
-        HeadRightCount : 0,
-        HeadShakeCount : 0,
+        // EyeCount : 0,
+        // MouthCount : 0,
+        // HeadLeftCount : 0,
+        // HeadRightCount : 0,
+        // HeadShakeCount : 0,
         voiceAction: -1,
         isRecordingVoice: false,
         isVoice:false,
         isShowImg1:false,
+        isPcCameraOpen:false,
         isShowImg2:false,
+        isDroneCameraOpen:false,
+        isDroneConnected:false,
         isFace:false,
         isPoint:false,
         isAlign:false,
-        isEye:false,
-        isMouth:false,
-        isHead:false,
-        isGettingCount:false,
+        // isEye:false,
+        // isMouth:false,
+        // isHead:false,
+        // isGettingCount:false,
         isHand:false,
         isHandPoint:false,
         progress: 0,
@@ -396,23 +408,23 @@ import SystemInformation from './LandingPage/SystemInformation'
         move_speed: 10,
         fly_height: 100,
         currentState:{
-          pitch: 0,  
-          roll: 0,   
-          yaw: 0,    
-          vgx: 0,    
-          vgy: 0,    
-          vgz: 0,    
-          templ: 0,  
-          temph: 0,  
-          tof: 0,    
-          h: 0,      
-          bat: 0,  
-          baro: 0.0, 
-          time: 0,   
-          agx: 0.0,  
-          agy: 0.0,  
-          agz: 0.0,  
-          wifi: 0 , 
+          pitch: 0,
+          roll: 0,
+          yaw: 0,
+          vgx: 0,
+          vgy: 0,
+          vgz: 0,
+          templ: 0,
+          temph: 0,
+          tof: 0,
+          h: 0,
+          bat: 0,
+          baro: 0.0,
+          time: 0,
+          agx: 0.0,
+          agy: 0.0,
+          agz: 0.0,
+          wifi: 0 ,
         },
         options1: [{
           value: 1,
@@ -457,15 +469,15 @@ import SystemInformation from './LandingPage/SystemInformation'
         return `${this.imgurl2_}?t=${this.timestamp}`;
       },
       getVoiceAction(){
-        if(this.voiceAction == 0){
+        if(this.voiceAction === 0){
           return "起飞"
-      }else if(this.voiceAction == 1){
+      }else if(this.voiceAction === 1){
           return "降落"
-      }else if(this.voiceAction == 2){
+      }else if(this.voiceAction === 2){
           return "前进"
-      }else if(this.voiceAction == 3){
+      }else if(this.voiceAction === 3){
           return "后退"
-        }else if(this.voiceAction == 4){
+        }else if(this.voiceAction === 4){
           return "降落"
         }else{
           return "无命令"
@@ -480,10 +492,10 @@ import SystemInformation from './LandingPage/SystemInformation'
 
       switchboard()
       {
-          if(this.isLogin == 1)
+          if(this.isLogin === 1)
           {
             this.isLogin = 2
-          }else if(this.isLogin == 2)
+          }else if(this.isLogin === 2)
           {
             this.isLogin = 1
           }
@@ -491,9 +503,15 @@ import SystemInformation from './LandingPage/SystemInformation'
       },
 
       getCurrentState(){
+          if (!this.isDroneConnected) {
+            // 如果无人机未连接，清除定时器并返回
+            clearInterval(this.CurrentStateTimer);
+            return;
+          }
+
         this.CurrentStateTimer = setInterval(() => {
           this.$http.get('http://127.0.0.1:8000/get_current_state').then(response => {
-            if (response.data.status == 1) {
+            if (response.data.status === 1) {
               this.currentState.agx = response.data.tello_state.agx;
               this.currentState.agy = response.data.tello_state.agy;
               this.currentState.agz = response.data.tello_state.agz;
@@ -516,7 +534,7 @@ import SystemInformation from './LandingPage/SystemInformation'
                 message: '获取状态参数失败',
                 type: 'error'
               });
-              clearInterval(this.CurrentStateTimer) 
+              clearInterval(this.CurrentStateTimer)
             }
           }).catch(error => {
           console.error(error);
@@ -524,13 +542,24 @@ import SystemInformation from './LandingPage/SystemInformation'
         });
         }, 250);
       },
-      wifiConnect()
+
+      toggleDroneConnection() {
+        if (this.isDroneConnected) {
+          this.disconnectDrone();
+          this.isShowImg2 = false;
+          this.isDroneCameraOpen = false;
+        } else {
+          this.connectDrone();
+        }
+      },
+      connectDrone()
       {
         this.fullscreenLoading = true;
-        this.$http.get('http://127.0.0.1:8000/wifi_connect')
+        this.$http.get('http://127.0.0.1:8000/connect_drone')
           .then(response => {
-            if (response.data.status == 1) {
+            if (response.data.status === 1) {
               this.fullscreenLoading = false;
+              this.isDroneConnected = true;
               this.$message({
                 message: '连接成功',
                 type: 'success'
@@ -553,6 +582,30 @@ import SystemInformation from './LandingPage/SystemInformation'
                 message: '网络请求失败，请检查后端服务是否正常运行',
                 type: 'error'
             });
+        });
+    },
+    disconnectDrone() {
+      this.$http.get('http://127.0.0.1:8000/disconnect_drone')
+        .then(response => {
+          if (response.data.status === 1) {
+            this.$message({
+              message: response.data.message,
+              type: 'success'
+            });
+            this.isDroneConnected = false;
+          } else {
+            this.$message({
+              message: response.data.message,
+              type: 'error'
+            });
+          }
+        })
+        .catch(error => {
+          console.error(error);
+          this.$message({
+            message: '断开连接失败',
+            type: 'error'
+          });
         });
     },
 
@@ -586,7 +639,7 @@ import SystemInformation from './LandingPage/SystemInformation'
           this.isRecordingVoice = true;
           this.$http.get('http://127.0.0.1:8000/record_voice')
         .then(response => {
-            if (response.data.status == 1) {
+            if (response.data.status === 1) {
               this.$message({
                 message: '识别成功',
                 type: 'success'
@@ -660,7 +713,7 @@ import SystemInformation from './LandingPage/SystemInformation'
       openVoice(){
         this.$http.get('http://127.0.0.1:8000/turn_voice')
         .then(response => {
-            if (response.data.status == 1) {
+            if (response.data.status === 1) {
               this.$data.isVoice = true;
             } else {
               this.$data.isVoice = false;
@@ -732,7 +785,7 @@ import SystemInformation from './LandingPage/SystemInformation'
     openPoint() {
       this.$http.get('http://127.0.0.1:8000/turn_point')
           .then(response => {
-            if (response.data.status == 1) {
+            if (response.data.status === 1) {
               this.$data.isPoint = true;
             } else {
               this.$data.isPoint = false;
@@ -743,7 +796,7 @@ import SystemInformation from './LandingPage/SystemInformation'
     openAlign() {
       this.$http.get('http://127.0.0.1:8000/turn_align')
           .then(response => {
-            if (response.data.status == 1) {
+            if (response.data.status === 1) {
               this.$data.isAlign = true;
             } else {
               this.$data.isAlign = false;
@@ -754,7 +807,7 @@ import SystemInformation from './LandingPage/SystemInformation'
     openFace() {
       this.$http.get('http://127.0.0.1:8000/turn_face')
           .then(response => {
-            if (response.data.status == 1) {
+            if (response.data.status === 1) {
               this.$data.isFace = true;
             } else {
               this.$data.isFace = false;
@@ -794,7 +847,7 @@ import SystemInformation from './LandingPage/SystemInformation'
     // openHead() {
     //   this.$http.get('http://127.0.0.1:8000/turn_head')
     //       .then(response => {
-    //         if (response.data.status == 1) {
+    //         if (response.data.status === 1) {
     //           this.controlGetCount(1)
     //           this.$data.isHead = true;
     //         } else {
@@ -807,7 +860,7 @@ import SystemInformation from './LandingPage/SystemInformation'
     openHand() {
       this.$http.get('http://127.0.0.1:8000/turn_hand')
           .then(response => {
-            if (response.data.status == 1) {
+            if (response.data.status === 1) {
               this.$data.isHand = true;
             } else {
               this.$data.isHand = false;
@@ -838,12 +891,22 @@ import SystemInformation from './LandingPage/SystemInformation'
     openCamera1() {
       this.$http.get('http://127.0.0.1:8000/turn_pc_camera')
           .then(response => {
-            if (response.data.status == 1) {
+            if (response.data.status === 1) { //打开
               this.isShowImg1 = true;
-            } else {
+              this.isPcCameraOpen = true;
+              this.$message({
+                message: response.data.message,
+                type: 'success'
+              })
+            } else {  // 关闭
               this.isShowImg1 = false;
+              this.isPcCameraOpen = false;
+              this.$message({
+                message: response.data.message,
+                type: 'error'
+              })
             }
-            console.log(response.data.status, this.isShowImg2);
+            console.log(response.data.status, this.isShowImg1);
           })
           .catch(error => {
             console.error(error);
@@ -852,10 +915,20 @@ import SystemInformation from './LandingPage/SystemInformation'
     openCamera2() {
       this.$http.get('http://127.0.0.1:8000/turn_drone_camera')
           .then(response => {
-            if (response.data.status == 1) {
+            if (response.data.status === 1) { //打开
               this.isShowImg2 = true;
-            } else {
+              this.isDroneCameraOpen = true;
+              this.$message({
+                message: response.data.message,
+                type: 'success'
+              })
+            } else {  // 关闭
               this.isShowImg2 = false;
+              this.isDroneCameraOpen = false;
+              this.$message({
+                message: response.data.message,
+                type: 'error'
+              })
             }
             console.log(response.data.status, this.isShowImg2);
           })
@@ -863,25 +936,18 @@ import SystemInformation from './LandingPage/SystemInformation'
             console.error(error);
           });
     },
-    // storageFace() {
-    //   this.$message({
-    //     message: '请保证摄像头前只有一个人',
-    //     type: 'warning'
-    //   });
-    //   if (!this.isAlign) {
-    //     this.openAlign()
-    //   }
-    //   let data = {'name': this.name}
-    //   this.$http.post('http://127.0.0.1:8000/storage_face', data)
-    //       .then(response => {
-    //         console.log(response.data);
-    //       })
-    //       .catch(error => {
-    //         console.error(error);
-    //       });
-    // }
+
     login()
     {
+      if(!this.isPcCameraOpen){
+        this.$message({
+          message: '请打开摄像头',
+          type: 'error'
+        });
+        return;
+      }
+
+
       this.$http.get('http://127.0.0.1:8000/login_get_frame_info')
       .then(response => {
         // 获取人脸信息
@@ -897,7 +963,7 @@ import SystemInformation from './LandingPage/SystemInformation'
           if (faceInfo.face_count > 1) {
             this.$message({
               message: '确保画面中只有一人',
-              type: 'warning'
+              type: 'error'
             });
             return;
           } else if (faceInfo.face_count === 0) {
@@ -909,7 +975,7 @@ import SystemInformation from './LandingPage/SystemInformation'
           } else if (faceInfo.face_exists) {
             this.$message({
               message: '认证成功',
-              type: 'info'
+              type: 'success'
             });
             this.isLogin = 1;
             return;
@@ -924,14 +990,12 @@ import SystemInformation from './LandingPage/SystemInformation'
       })
     },
     storageFace() {
-      // 检查是否开启人脸对齐
-      const namePattern = /^[a-zA-Z_]+$/;
-      if (!namePattern.test(this.name)) {
-          this.$message({
-              message: '人名只能包含英文和下划线',
-              type: 'warning'
-          });
-          return;
+      if (!this.isPcCameraOpen) {
+        this.$message({
+          message: '电脑摄像头未开启',
+          type: 'error'
+        });
+        return;
       }
 
       // 发送请求获取当前画面中的人脸信息
@@ -950,19 +1014,19 @@ import SystemInformation from './LandingPage/SystemInformation'
         if (faceInfo.face_count > 1) {
           this.$message({
             message: '确保画面中只有一人',
-            type: 'warning'
+            type: 'error'
           });
           return;
         } else if (faceInfo.face_count === 0) {
           this.$message({
             message: '未检测到人脸',
-            type: 'warning'
+            type: 'error'
           });
           return;
         } else if (faceInfo.face_exists) {
           this.$message({
             message: '该人脸已经存在',
-            type: 'warning'
+            type: 'error'
           });
           return;
         }
@@ -974,23 +1038,16 @@ import SystemInformation from './LandingPage/SystemInformation'
           console.log(response.data);
           if (response.data.status === 1) {
             this.$message({
-              message: '人脸录入成功',
+              message: response.data.message,
               type: 'success'
             });
-          } else {
-            // 根据不同的 message 显示不同的提示
-            if (response.data.message === '该名字已存在，请选择不同的名字') {
+          }
+          else {
               this.$message({
-                message: '该名字已存在，请选择不同的名字',
-                type: 'warning'
-              });
-            } else {
-              this.$message({
-                message: '人脸录入失败',
+                message: response.data.message,
                 type: 'error'
               });
             }
-          }
         })
         .catch(error => {
           console.error(error);

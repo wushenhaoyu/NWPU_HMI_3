@@ -37,8 +37,8 @@ urlpatterns = [
     # path("turn_hand_point", login.turn_hand_point, name="turn_hand_point"),
 
     # ---------无人机部分---------#
-    # path("wifi_connect", drone.get_wifi_state, name="wifi_connect"),
-    path("wifi_connect", drone.connect_drone, name="wifi_connect"),
+    path("connect_drone", drone.connect_drone, name="connect_drone"),
+    path("disconnect_drone", drone.disconnect_drone, name="disconnect_drone"),
     path("turn_drone_camera", drone.turn_drone_camera, name="turn_drone_camera"),
     path("drone_video", drone.video_stream, name="drone_video"),
     path("get_current_state", drone.get_current_state, name="get_current_state"),

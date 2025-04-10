@@ -1,5 +1,7 @@
 import json
 import os
+import threading
+
 from django.http import JsonResponse, StreamingHttpResponse
 import cv2
 import insightface
@@ -84,6 +86,12 @@ class FaceLogin:
         self.frame = None
         self.label = "" # 手势名称标签
 
+        # 新增标志位，指示是否应该继续处理帧
+        # 解决开摄像头、关闭后，get_frame_info继续运行再次打开摄像头
+        self.isProcessingFrame = False
+
+        self.lock = threading.Lock()
+
     def __del__(self):
         self.cap.release()
 
@@ -125,120 +133,235 @@ class FaceLogin:
             logging.error(f"存储人脸信息时出错： {e}")
             return None
 
-    def get_frame_info(self):
-        """打开人脸识别开关，进行人脸登录
-        只允许画面存在一个人，多人时不识别
-        Returns:
-            1.经过识别并标注的人脸frame
-            2.人脸数量
-            3.人脸是否在数据库中存在（只有一个人时）
-        """
+    # def get_frame_info(self):
+    #     """打开人脸识别开关，进行人脸登录
+    #     只允许画面存在一个人，多人时不识别
+    #     Returns:
+    #         1.经过识别并标注的人脸frame
+    #         2.人脸数量
+    #         3.人脸是否在数据库中存在（只有一个人时）
+    #     """
+    #     # if not self.isProcessingFrame:
+    #     #     return None, 0, False
+    #     face_count = 0
+    #     face_exists = False
+    #     try:
+    #         with self.lock:
+    #             ret, frame = self.cap.read()
+    #             if not ret:
+    #                 logging.warning("无法从PC摄像头中获取画面")
+    #                 # self.cap.release()
+    #                 # self.cap = cv2.VideoCapture(0)
+    #                 # ret, frame = self.cap.read()
+    #                 # if not ret:
+    #                 #     logging.error("重新打开摄像头后仍然无法获取画面")
+    #                 return None, face_count, face_exists
+    #             self.frame = cv2.flip(frame,1)
+    #
+    #             # 如果人脸登录
+    #             if self.isFaceRecognize:
+    #                 face_results = []  # 存储人脸识别结果
+    #                 try:
+    #                     faces = self.app.get(self.frame)
+    #                 except Exception as e:
+    #                     logging.error(f"app.get()检测人脸时出错： {e}")
+    #                     faces = []
+    #
+    #                 face_count = len(faces)
+    #                 if face_count == 1:
+    #                     recognized_face = compare_face_with_database(faces[0])
+    #                     if recognized_face is not None:
+    #                         face_exists = True
+    #                     # 如果需要存储人脸且只检测到一张人脸
+    #                     if self.isStorageFace:
+    #                         # 人脸对齐
+    #                         aligned_frame = self.align_face(faces[0], self.frame)
+    #                         aligned_face = self.app.get(aligned_frame)
+    #                         self.storage_face(aligned_frame, aligned_face[0], self.name)
+    #                         self.isStorageFace = False
+    #
+    #                 if not faces:
+    #                     # logging.info("没有检测到人脸")
+    #                     face_results.append({"name": "", "bbox": None})
+    #                 else:
+    #                     # 获取图像中所有在数据库中存在的人脸
+    #                     for index, face in enumerate(faces):
+    #                         try:
+    #                             recognized_face = compare_face_with_database(face)
+    #                             if recognized_face is not None:
+    #                                 face_results.append({
+    #                                     "name": recognized_face.name,
+    #                                     "bbox": face['bbox'],
+    #                                 })
+    #
+    #                         except Exception as e:
+    #                             logging.error(f"识别人脸 {index} 时出错： {e}")
+    #                             face_results.append({"name": "", "bbox": None})
+    #
+    #                     # 如果数据库人脸识别有结果
+    #                     if len(face_results) > 0:
+    #                         # self.firstRecognizedPeople = face_results[0]
+    #                         # logging.info(f"识别到的人脸为：{self.firstRecognizedPeople['name']}")
+    #                         # 以识别出的第一个人为准
+    #                         name = face_results[0]["name"]
+    #                         bbox = face_results[0]["bbox"]
+    #                         cv2.putText(self.frame, name, (int(bbox[0]), int(bbox[1]) - 10),
+    #                                     cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+    #                         cv2.rectangle(self.frame, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])),
+    #                                       (0, 255, 0), 2)
+    #
+    #                         if self.isHandRecognize:
+    #                             self.frame = hand_recognize(self.frame, bbox)
+    #
+    #                         # 其他人统一标红
+    #                         for face in face_results[1:]:
+    #                             name = face["name"]
+    #                             bbox = face['bbox']
+    #                             cv2.putText(self.frame, name, (int(bbox[0]), int(bbox[1]) - 10),
+    #                                         cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
+    #                             cv2.rectangle(self.frame, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])),
+    #                                           (0, 0, 255), 2)
+    #                     # 数据库中没有存入当前图片中的所有人脸
+    #                     else:
+    #                         # 绘制陌生人边界框
+    #                         for face in faces:
+    #                             bbox = face['bbox']
+    #                             cv2.rectangle(self.frame, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])),
+    #                                           (0, 0, 255), 2)
+    #                             cv2.putText(self.frame, 'Stranger', (int(bbox[0]), int(bbox[1]) - 10),
+    #                                         cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
+    #                         # logging.info("当前画面中的人均未在数据库中,请先存入人脸")
+    #
+    #         ret, jpeg = cv2.imencode('.jpg', self.frame)
+    #         return jpeg.tobytes(), face_count, face_exists
+    #
+    #     except Exception as e:
+    #         logging.warning(f"从PC摄像头中获取画面时发生错误: \n{e}")
+    #         return None, 0, False
+
+    def get_frame(self):
+        """获取视频帧"""
+        if not self.isProcessingFrame:
+            return None, 0, False
         try:
-            ret, frame = self.cap.read()
-            if not ret:
-                logging.warning("无法从PC摄像头中获取画面，尝试重新打开摄像头")
-                self.cap.release()
-                self.cap = cv2.VideoCapture(0)
+            with self.lock:
                 ret, frame = self.cap.read()
                 if not ret:
-                    logging.error("重新打开摄像头后仍然无法获取画面")
-                    return None
-            self.frame = cv2.flip(frame,1)
+                    logging.warning("无法从PC摄像头中获取画面")
+                    return None, 0, False
+                self.frame = cv2.flip(frame, 1)
+                return self.frame, 0, False
+        except Exception as e:
+            logging.error(f"获取视频帧时发生错误: \n{e}")
+            return None, 0, False
 
-            face_count = 0
-            face_exists = False
+    def recognize_faces(self, frame):
+        """人脸识别"""
+        face_count = 0
+        face_exists = False
+        try:
+            with self.lock:
+                # 如果人脸登录
+                if self.isFaceRecognize:
+                    face_results = []  # 存储人脸识别结果
+                    try:
+                        faces = self.app.get(frame)
+                    except Exception as e:
+                        logging.error(f"app.get()检测人脸时出错： {e}")
+                        faces = []
 
-            # 如果人脸登录
-            if self.isFaceRecognize:
-                face_results = []  # 存储人脸识别结果
-                try:
-                    faces = self.app.get(self.frame)
-                except Exception as e:
-                    logging.error(f"app.get()检测人脸时出错： {e}")
-                    faces = []
+                    face_count = len(faces)
+                    if face_count == 1:
+                        recognized_face = compare_face_with_database(faces[0])
+                        if recognized_face is not None:
+                            face_exists = True
+                        # 如果需要存储人脸且只检测到一张人脸
+                        if self.isStorageFace:
+                            # 人脸对齐
+                            aligned_frame = self.align_face(faces[0], frame)
+                            aligned_face = self.app.get(aligned_frame)
+                            self.storage_face(aligned_frame, aligned_face[0], self.name)
+                            self.isStorageFace = False
 
-                face_count = len(faces)
-                if face_count == 1:
-                    recognized_face = compare_face_with_database(faces[0])
-                    if recognized_face is not None:
-                        face_exists = True
-                    # 如果需要存储人脸且只检测到一张人脸
-                    if self.isStorageFace:
-                        # 人脸对齐
-                        aligned_frame = self.align_face(faces[0], self.frame)
-                        aligned_face = self.app.get(aligned_frame)
-                        self.storage_face(aligned_frame, aligned_face[0], self.name)
-                        self.isStorageFace = False
-
-                if not faces:
-                    # logging.info("没有检测到人脸")
-                    face_results.append({"name": "", "bbox": None})
-                else:
-                    # 获取图像中所有在数据库中存在的人脸
-                    for index, face in enumerate(faces):
-                        try:
-                            recognized_face = compare_face_with_database(face)
-                            if recognized_face is not None:
-                                face_results.append({
-                                    "name": recognized_face.name,
-                                    "bbox": face['bbox'],
-                                })
-
-                        except Exception as e:
-                            logging.error(f"识别人脸 {index} 时出错： {e}")
-                            face_results.append({"name": "", "bbox": None})
-
-                    # 如果数据库人脸识别有结果
-                    if len(face_results) > 0:
-                        # self.firstRecognizedPeople = face_results[0]
-                        # logging.info(f"识别到的人脸为：{self.firstRecognizedPeople['name']}")
-                        # 以识别出的第一个人为准
-                        name = face_results[0]["name"]
-                        bbox = face_results[0]["bbox"]
-                        cv2.putText(self.frame, name, (int(bbox[0]), int(bbox[1]) - 10),
-                                    cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
-                        cv2.rectangle(self.frame, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])),
-                                      (0, 255, 0), 2)
-
-                        if self.isHandRecognize:
-                            self.frame = hand_recognize(self.frame, bbox)
-
-                        # 其他人统一标红
-                        for face in face_results[1:]:
-                            name = face["name"]
-                            bbox = face['bbox']
-                            cv2.putText(self.frame, name, (int(bbox[0]), int(bbox[1]) - 10),
-                                        cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
-                            cv2.rectangle(self.frame, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])),
-                                          (0, 0, 255), 2)
-                    # 数据库中没有存入当前图片中的所有人脸
+                    if not faces:
+                        face_results.append({"name": "", "bbox": None})
                     else:
-                        # 绘制陌生人边界框
-                        for face in faces:
-                            bbox = face['bbox']
-                            cv2.rectangle(self.frame, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])),
-                                          (0, 0, 255), 2)
-                            cv2.putText(self.frame, 'Stranger', (int(bbox[0]), int(bbox[1]) - 10),
-                                        cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
-                        # logging.info("当前画面中的人均未在数据库中,请先存入人脸")
+                        # 获取图像中所有在数据库中存在的人脸
+                        for index, face in enumerate(faces):
+                            try:
+                                recognized_face = compare_face_with_database(face)
+                                if recognized_face is not None:
+                                    face_results.append({
+                                        "name": recognized_face.name,
+                                        "bbox": face['bbox'],
+                                    })
 
-            ret, jpeg = cv2.imencode('.jpg', self.frame)
-            return jpeg.tobytes(), face_count, face_exists
+                            except Exception as e:
+                                logging.error(f"识别人脸 {index} 时出错： {e}")
+                                face_results.append({"name": "", "bbox": None})
+
+                        # 如果数据库人脸识别有结果
+                        if len(face_results) > 0:
+                            name = face_results[0]["name"]
+                            bbox = face_results[0]["bbox"]
+                            cv2.putText(frame, name, (int(bbox[0]), int(bbox[1]) - 10),
+                                        cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+                            cv2.rectangle(frame, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])),
+                                          (0, 255, 0), 2)
+
+                            if self.isHandRecognize:
+                                frame = hand_recognize(frame, bbox)
+
+                            # 其他人统一标红
+                            for face in face_results[1:]:
+                                name = face["name"]
+                                bbox = face['bbox']
+                                cv2.putText(frame, name, (int(bbox[0]), int(bbox[1]) - 10),
+                                            cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
+                                cv2.rectangle(frame, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])),
+                                              (0, 0, 255), 2)
+                        # 数据库中没有存入当前图片中的所有人脸
+                        else:
+                            for face in faces:
+                                bbox = face['bbox']
+                                cv2.rectangle(frame, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])),
+                                              (0, 0, 255), 2)
+                                cv2.putText(frame, 'Stranger', (int(bbox[0]), int(bbox[1]) - 10),
+                                            cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
+
+            return frame, face_count, face_exists
 
         except Exception as e:
-            logging.warning(f"从PC摄像头中获取画面时发生错误: \n{e}")
+            logging.error(f"人脸识别时发生错误: \n{e}")
+            return frame, 0, False
+
+    def get_frame_info(self):
+        """获取视频帧并进行人脸识别"""
+        frame, _, _ = self.get_frame()
+        if frame is None:
             return None, 0, False
+        frame, face_count, face_exists = self.recognize_faces(frame)
+        if frame is not None:
+            ret, jpeg = cv2.imencode('.jpg', frame)
+            return jpeg.tobytes(), face_count, face_exists
+        else:
+            return None, 0, False
+
+
+camera = FaceLogin()
 
 
 def gen(camera):
     while True:
+        # if not camera.isProcessingFrame:
+        #     time.sleep(0.1)  # 等待一段时间后再次检查
+        #     continue
         frame, face_count, face_exists = camera.get_frame_info()
         if frame is not None:
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
-
-
-camera = FaceLogin()
+        else:
+            time.sleep(0.1)
 
 
 def video_feed(request):
@@ -250,26 +373,28 @@ def turn_pc_camera(request):
         if camera.isOpenPcCamera:
             camera.cap.release()
             camera.isOpenPcCamera = False
-            return JsonResponse({'status': 0, 'message': 'Camera turned successfully'})
-        elif not camera.isOpenPcCamera:
+            camera.isProcessingFrame = False
+            return JsonResponse({'status': 0, 'message': '关闭电脑摄像头'})
+        else:
             camera.cap = cv2.VideoCapture(0)
             camera.isOpenPcCamera = True
-            return JsonResponse({'status': 1, 'message': 'Camera turned successfully'})
+            camera.isProcessingFrame = True
+            return JsonResponse({'status': 1, 'message': '打开电脑摄像头'})
     except Exception as e:
         logging.error(f"Error turning camera: {e}")  # 增加日志记录
-        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+        return JsonResponse({'status': 'error', 'message': str(e)})
 
 
 def turn_hand(request):
     try:
         if camera.isHandRecognize:
             camera.isHandRecognize = False
-            return JsonResponse({'status': 0, 'message': 'Hand detection turned off'})
+            return JsonResponse({'status': 0, 'message': '关闭手势检测'})
         elif not camera.isHandRecognize:
             camera.isHandRecognize = True
-            return JsonResponse({'status': 1, 'message': 'Hand detection turned on'})
+            return JsonResponse({'status': 1, 'message': '打开手势检测'})
     except Exception as e:
-        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+        return JsonResponse({'status': 'error', 'message': str(e)})
 
 
 @csrf_exempt
@@ -293,7 +418,7 @@ def storage_face(request):
 
         camera.name = name
         camera.isStorageFace = True
-        response = JsonResponse({'status': 1, 'message': 'Storage face turned on'})
+        response = JsonResponse({'status': 1, 'message': '人脸录入成功'})
         response["Access-Control-Allow-Origin"] = "http://localhost:9080"
         return response
     except Exception as e:
@@ -315,11 +440,11 @@ def get_frame_info(request):
             response["Access-Control-Allow-Origin"] = "http://localhost:9080"
             return response
         else:
-            response = JsonResponse({'status': 0, 'message': '无法获取画面'}, status=500)
+            response = JsonResponse({'status': 0, 'message': '无法获取画面'})
             response["Access-Control-Allow-Origin"] = "http://localhost:9080"
             return response
     except Exception as e:
         logging.error(f"获取人脸信息时出错: {e}")
-        response = JsonResponse({'status': 0, 'message': str(e)}, status=500)
+        response = JsonResponse({'status': 0, 'message': str(e)})
         response["Access-Control-Allow-Origin"] = "http://localhost:9080"
         return response

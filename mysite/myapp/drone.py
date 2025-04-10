@@ -333,15 +333,12 @@ class Drone:
             try:
                 self.tello = Tello()
                 self.tello.connect()
-                # self.tello.streamon()
                 self._is_connected = True
-                # self.isOpenDroneCamera = True
                 logging.info("无人机连接成功")
                 return True
             except Exception as e:
                 logging.error(f"连接失败: {e}")
                 self._is_connected = False
-                # self.isOpenDroneCamera = False
                 return False
 
     def is_connected(self):
@@ -468,6 +465,20 @@ def connect_drone(request):
 
 
 @csrf_exempt
+def disconnect_drone(request):
+    """断开无人机连接视图"""
+    global global_drone
+
+    if global_drone and global_drone.is_connected():
+        global_drone.disconnect()
+        logging.info("无人机已断开连接")
+        return JsonResponse({'status': 1, 'message': '无人机已断开连接'})
+    else:
+        logging.error("无人机未连接")
+        return JsonResponse({'status': 0, 'message': '无人机未连接'})
+
+
+@csrf_exempt
 def control(request):
     """控制指令视图"""
     if not global_drone or not global_drone.is_connected():
@@ -540,17 +551,17 @@ def turn_drone_camera(request):
         # 检查全局无人机实例是否存在且已连接
         if global_drone is None or not global_drone.is_connected():
             logging.error("无人机未连接")
-            return JsonResponse({'status': 0, 'message': '无人机未连接'}, status=400)
+            return JsonResponse({'status': 0, 'message': '无人机未连接'})
 
         with global_drone.lock:
             if global_drone.isOpenDroneCamera:
                 global_drone.tello.streamoff()
                 global_drone.isOpenDroneCamera = False
-                return JsonResponse({'status': 0, 'message': '关闭无人机摄像头成功'})
+                return JsonResponse({'status': 0, 'message': '关闭无人机摄像头'})
             else:
                 global_drone.tello.streamon()
                 global_drone.isOpenDroneCamera = True
-                return JsonResponse({'status': 1, 'message': '打开无人机摄像头成功'})
+                return JsonResponse({'status': 1, 'message': '打开无人机摄像头'})
 
     except Exception as e:
         logging.error(f"Error turning camera: {e}")
