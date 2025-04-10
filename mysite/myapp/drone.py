@@ -316,6 +316,7 @@ class Drone:
         self._is_connected = False
         self.frame = None
         self.lock = threading.Lock()
+        self.isOpenDroneCamera = False
 
         # 控制参数
         self.lr = 0
@@ -332,13 +333,15 @@ class Drone:
             try:
                 self.tello = Tello()
                 self.tello.connect()
-                self.tello.streamon()
+                # self.tello.streamon()
                 self._is_connected = True
+                # self.isOpenDroneCamera = True
                 logging.info("无人机连接成功")
                 return True
             except Exception as e:
                 logging.error(f"连接失败: {e}")
                 self._is_connected = False
+                # self.isOpenDroneCamera = False
                 return False
 
     def is_connected(self):
@@ -349,7 +352,7 @@ class Drone:
     def get_frame(self):
         """获取视频帧"""
         with self.lock:
-            if not self._is_connected:
+            if not self._is_connected or not self.isOpenDroneCamera:
                 return None
 
             try:
@@ -408,6 +411,11 @@ class Drone:
         with self.lock:
             self.speed = max(10, min(20, speed))  # 限制在10-100之间
             self.tello.set_speed(self.speed)
+
+    def get_battery(self):
+        """获取电池电量"""
+        with self.lock:
+            return self.tello.get_battery() if self._is_connected else 0
 
     def get_current_state(self):
         """获取无人机当前状态"""
@@ -482,7 +490,7 @@ def control(request):
 def video_stream(request):
     """视频流视图"""
     if not global_drone or not global_drone.is_connected():
-        return HttpResponse("无人机未连接", status=400)
+        return JsonResponse({'status': 0, 'message': '无人机未连接'})
 
     def generate():
         while True:
@@ -525,3 +533,25 @@ def update_speed(request):
     except Exception as e:
         logging.error(f"设置速度时出错: {e}")
         return JsonResponse({'status': 0, 'message': str(e)})
+
+
+def turn_drone_camera(request):
+    try:
+        # 检查全局无人机实例是否存在且已连接
+        if global_drone is None or not global_drone.is_connected():
+            logging.error("无人机未连接")
+            return JsonResponse({'status': 0, 'message': '无人机未连接'}, status=400)
+
+        with global_drone.lock:
+            if global_drone.isOpenDroneCamera:
+                global_drone.tello.streamoff()
+                global_drone.isOpenDroneCamera = False
+                return JsonResponse({'status': 0, 'message': '关闭无人机摄像头成功'})
+            else:
+                global_drone.tello.streamon()
+                global_drone.isOpenDroneCamera = True
+                return JsonResponse({'status': 1, 'message': '打开无人机摄像头成功'})
+
+    except Exception as e:
+        logging.error(f"Error turning camera: {e}")
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)

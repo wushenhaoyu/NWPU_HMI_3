@@ -245,7 +245,7 @@ def video_feed(request):
     return StreamingHttpResponse(gen(camera), content_type='multipart/x-mixed-replace; boundary=frame')
 
 
-def turn_camera(request):
+def turn_pc_camera(request):
     try:
         if camera.isOpenPcCamera:
             camera.cap.release()
