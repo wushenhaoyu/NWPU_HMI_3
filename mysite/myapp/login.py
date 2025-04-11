@@ -86,7 +86,7 @@ class FaceLogin:
         self.embedding = []
 
         self.frame = None
-        self.label = "" # 手势名称标签
+        self.label = ""  # 手势名称标签
 
         # 新增标志位，指示是否应该继续处理帧
         # 解决开摄像头、关闭后，get_frame_info继续运行再次打开摄像头
@@ -394,7 +394,7 @@ def turn_pc_camera(request):
             camera.isProcessingFrame = True
             return JsonResponse({'status': 1, 'message': '打开电脑摄像头'})
     except Exception as e:
-        logging.error(f"Error turning camera: {e}")  
+        logging.error(f"Error turning camera: {e}")
         return JsonResponse({'status': 'error', 'message': str(e)})
 
 
@@ -402,12 +402,12 @@ def turn_hand(request):
     try:
         # 使用辅助函数检查无人机是否已连接
         from myapp.drone import is_drone_connected
-        
+
         if not is_drone_connected():
             logging.error("无人机未连接或未正确初始化")
             camera.isHandRecognize = False
             return JsonResponse({'status': 0, 'message': '无人机未连接，无法开启手势检测'})
-        
+
         if camera.isHandRecognize:
             camera.isHandRecognize = False
             return JsonResponse({'status': 0, 'message': '关闭手势检测'})
@@ -431,7 +431,7 @@ def turn_hand(request):
 #             logging.error("global_drone 为 None，无人机可能未正确初始化")
 #             camera.isHandRecognize = False
 #             return JsonResponse({'status': 0, 'message': '无人机未连接，无法开启手势检测'})
-        
+
 #         # 安全地调用is_connected方法
 #         try:
 #             is_connected = global_drone.is_connected()

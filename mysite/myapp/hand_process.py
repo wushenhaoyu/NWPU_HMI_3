@@ -5,17 +5,17 @@ import cv2
 import logging
 
 # 配置日志
-# logging.basicConfig(
-#     level=logging.INFO,
-#     format='%(asctime)s - %(levelname)s - %(message)s',  # 定义日志格式
-#     datefmt='%Y-%m-%d %H:%M:%S'  # 定义时间格式
-# )
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',  # 定义日志格式
+    datefmt='%Y-%m-%d %H:%M:%S'  # 定义时间格式
+)
 
 # 调整ROI参数（右侧位置）
 ROI_WIDTH_RATIO = 1.5
 ROI_HEIGHT_RATIO = 1.5
 ROI_OFFSET_X_RATIO = 0.5  # 正数表示右侧偏移
-ROI_OFFSET_Y_RATIO = 0.2
+ROI_OFFSET_Y_RATIO = -0.6
 
 mp_hands = mp.solutions.hands
 mp_drawing = mp.solutions.drawing_utils

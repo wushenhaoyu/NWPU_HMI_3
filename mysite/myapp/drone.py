@@ -298,10 +298,11 @@ TELLO_SSID = "TELLO-FDDA9E"
 CTRL_MAP = {
     "takeoff": '起飞',
     "land": '降落',
+    "stop": '停止',
     "up": '上升',
     "down": '下降',
     "forward": '前进',
-    "back": '后退',
+    "backward": '后退',
     "left": '左移',
     "right": '右移',
     "rotate_left": '向左转',
@@ -456,7 +457,7 @@ def is_drone_connected():
         return drone.is_connected()
     except AttributeError:
         return False
-        
+
 def control_drone(command):
     """控制无人机执行命令
     Args:

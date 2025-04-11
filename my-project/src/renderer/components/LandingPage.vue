@@ -71,7 +71,7 @@
 
 
         <!---------------------------------------------------------->
-    
+
           <div v-if="value1===2">
             <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;"
                   @click="openHand">
@@ -82,7 +82,7 @@
                   inactive-text="关闭">
               </el-switch>
             </div>
-            
+
             <!-- 手势命令照片展示 -->
             <div style="margin-top: 2vh; display: flex; flex-wrap: wrap; justify-content: space-evenly; gap: 1vw;">
                 <img src="~@/assets/gesture_control.png" alt="gesture_label" style="height: 70%; width: 70%; border-radius: 1vw;"/>
@@ -418,11 +418,11 @@ import SystemInformation from './LandingPage/SystemInformation'
         {
           value: 2,
           label: '人脸操作'
-        },        
+        },
         {
           value: 3,
-          label: '键盘控制'
-        },        
+          label: '按键控制'
+        },
         {
           value: 4,
           label: '语音控制'
@@ -840,6 +840,7 @@ import SystemInformation from './LandingPage/SystemInformation'
               this.$data.isHand = false;
               this.$message.error(response.data.message);
             }
+
             console.log(response.data, this.isHand);
           })
           .catch(error => {
