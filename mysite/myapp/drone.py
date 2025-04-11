@@ -372,6 +372,8 @@ class Drone:
                 self.lr = self.fb = self.ud = self.yv = 0
 
                 # 处理特殊命令
+                if command == "stop" or command == "":
+                    return
                 if command == "takeoff":
                     self.tello.takeoff()
                     return {'status': 1, 'message': CTRL_MAP[command]}
@@ -384,7 +386,7 @@ class Drone:
                     "left": (-self.channel_rod, 0, 0, 0),
                     "right": (self.channel_rod, 0, 0, 0),
                     "forward": (0, self.channel_rod, 0, 0),
-                    "back": (0, -self.channel_rod, 0, 0),
+                    "backward": (0, -self.channel_rod, 0, 0),
                     "up": (0, 0, self.channel_rod, 0),
                     "down": (0, 0, -self.channel_rod, 0),
                     "rotate_left": (0, 0, 0, self.channel_rod),
@@ -434,16 +436,54 @@ class Drone:
                 logging.info("无人机断开连接")
 
 
+def get_drone():
+    """获取全局无人机实例
+    Returns:
+        Drone: 全局无人机实例，如果未初始化则为None
+    """
+    global global_drone
+    return global_drone
+
+def is_drone_connected():
+    """检查无人机是否已连接
+    Returns:
+        bool: 如果无人机已连接返回True，否则返回False
+    """
+    drone = get_drone()
+    if drone is None:
+        return False
+    try:
+        return drone.is_connected()
+    except AttributeError:
+        return False
+        
+def control_drone(command):
+    """控制无人机执行命令
+    Args:
+        command (str): 控制命令
+    Returns:
+        dict: 包含操作状态和消息的字典
+    """
+    drone = get_drone()
+    if drone is None:
+        return {'status': 0, 'message': '无人机未初始化'}
+    try:
+        return drone.control(command)
+    except Exception as e:
+        logging.error(f"控制无人机时出错: {e}")
+        return {'status': 0, 'message': str(e)}
+
+
+
 # ================ Django 视图函数 ================
 @csrf_exempt
 def connect_drone(request):
     """连接无人机视图"""
     global global_drone
-
-    # 如果已有实例则先断开
-    if global_drone and global_drone.is_connected():
-        global_drone.disconnect()
-        logging.info("已断开之前的无人机连接")
+    # # 如果已有实例则先断开
+    # if global_drone and global_drone.is_connected():
+    #     global_drone.disconnect()
+    #     logging.info("已断开之前的无人机连接")
 
     # 创建新实例
     global_drone = Drone()
@@ -455,22 +495,30 @@ def connect_drone(request):
         return JsonResponse({'status': 0, 'message': f"Wi-Fi 连接失败: {wifi_response['message']}"})
 
     # 尝试连接无人机
-    if global_drone.connect():
-        battery_level = global_drone.get_battery()
+    drone = get_drone()
+    if drone.connect():
+        battery_level = drone.get_battery()
         logging.info(f"无人机连接成功，电池电量: {battery_level}%")
         return JsonResponse({'status': 1, 'message': f'连接成功,电池电量:{battery_level}'})
     else:
         logging.error("无人机连接失败")
         return JsonResponse({'status': 0, 'message': '无人机连接失败'})
+    # if global_drone.connect():
+    #     battery_level = global_drone.get_battery()
+    #     logging.info(f"无人机连接成功，电池电量: {battery_level}%")
+    #     return JsonResponse({'status': 1, 'message': f'连接成功,电池电量:{battery_level}'})
+    # else:
+    #     logging.error("无人机连接失败")
+    #     return JsonResponse({'status': 0, 'message': '无人机连接失败'})
 
 
 @csrf_exempt
 def disconnect_drone(request):
     """断开无人机连接视图"""
-    global global_drone
-
-    if global_drone and global_drone.is_connected():
-        global_drone.disconnect()
+    # try:
+    drone = get_drone()
+    if drone and drone.is_connected():
+        drone.disconnect()
         logging.info("无人机已断开连接")
         return JsonResponse({'status': 1, 'message': '无人机已断开连接'})
     else:
@@ -481,8 +529,9 @@ def disconnect_drone(request):
 @csrf_exempt
 def control(request):
     """控制指令视图"""
-    if not global_drone or not global_drone.is_connected():
-        print('111')
+    drone = get_drone()
+    if not drone or not drone.is_connected():
+        # print('111')
         return JsonResponse({'status': 0, 'message': '无人机未连接'})
 
     try:
@@ -492,7 +541,7 @@ def control(request):
         if not command:
             return JsonResponse({'status': 0, 'message': '无效指令'})
 
-        return JsonResponse(global_drone.control(command))
+        return JsonResponse(drone.control(command))
     except Exception as e:
         logging.error(f"处理控制指令时出错: {e}")
         return JsonResponse({'status': 0, 'message': str(e)})
@@ -500,12 +549,13 @@ def control(request):
 
 def video_stream(request):
     """视频流视图"""
-    if not global_drone or not global_drone.is_connected():
+    drone = get_drone()
+    if not drone or not drone.is_connected():
         return JsonResponse({'status': 0, 'message': '无人机未连接'})
 
     def generate():
         while True:
-            frame = global_drone.get_frame()
+            frame = drone.get_frame()
             if frame:
                 yield (b'--frame\r\n'
                        b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
@@ -513,14 +563,28 @@ def video_stream(request):
                 time.sleep(0.1)
 
     return StreamingHttpResponse(generate(), content_type='multipart/x-mixed-replace; boundary=frame')
+    # if not global_drone or not global_drone.is_connected():
+    #     return JsonResponse({'status': 0, 'message': '无人机未连接'})
+
+    # def generate():
+    #     while True:
+    #         frame = global_drone.get_frame()
+    #         if frame:
+    #             yield (b'--frame\r\n'
+    #                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
+    #         else:
+    #             time.sleep(0.1)
+
+    # return StreamingHttpResponse(generate(), content_type='multipart/x-mixed-replace; boundary=frame')
 
 def get_current_state(request):
     """获取无人机当前状态"""
-    if not global_drone or not global_drone.is_connected():
+    drone = get_drone()
+    if not drone or not drone.is_connected():
         return JsonResponse({'status': 0, 'message': '无人机未连接'})
 
     try:
-        state = global_drone.get_current_state()
+        state = drone.get_current_state()
         return JsonResponse({'status': 1, 'tello_state': state})
     except Exception as e:
         logging.error(f"获取当前状态时出错: {e}")
@@ -530,7 +594,8 @@ def get_current_state(request):
 @csrf_exempt
 def update_speed(request):
     """设置无人机速度"""
-    if not global_drone or not global_drone.is_connected():
+    drone = get_drone()
+    if not drone or not drone.is_connected():
         return JsonResponse({'status': 0, 'message': '无人机未连接'})
 
     try:
@@ -539,7 +604,7 @@ def update_speed(request):
         if not speed:
             return JsonResponse({'status': 0, 'message': '设置无效'})
 
-        global_drone.update_speed(speed)
+        drone.update_speed(speed)
         return JsonResponse({'status': 1, 'message': f"设置成功，速度: {speed} cm/s"})
     except Exception as e:
         logging.error(f"设置速度时出错: {e}")
@@ -547,20 +612,21 @@ def update_speed(request):
 
 
 def turn_drone_camera(request):
+    drone = get_drone()
     try:
         # 检查全局无人机实例是否存在且已连接
-        if global_drone is None or not global_drone.is_connected():
+        if drone is None or not drone.is_connected():
             logging.error("无人机未连接")
             return JsonResponse({'status': 0, 'message': '无人机未连接'})
 
-        with global_drone.lock:
-            if global_drone.isOpenDroneCamera:
-                global_drone.tello.streamoff()
-                global_drone.isOpenDroneCamera = False
+        with drone.lock:
+            if drone.isOpenDroneCamera:
+                drone.tello.streamoff()
+                drone.isOpenDroneCamera = False
                 return JsonResponse({'status': 0, 'message': '关闭无人机摄像头'})
             else:
-                global_drone.tello.streamon()
-                global_drone.isOpenDroneCamera = True
+                drone.tello.streamon()
+                drone.isOpenDroneCamera = True
                 return JsonResponse({'status': 1, 'message': '打开无人机摄像头'})
 
     except Exception as e:

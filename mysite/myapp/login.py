@@ -10,6 +10,8 @@ import torch
 import numpy as np
 from scipy.spatial.distance import cosine
 from django.views.decorators.csrf import csrf_exempt
+
+from myapp.drone import global_drone
 from myapp.models import Face
 import re
 import time
@@ -242,18 +244,18 @@ class FaceLogin:
     def get_frame(self):
         """获取视频帧"""
         if not self.isProcessingFrame:
-            return None, 0, False
+            return None
         try:
             with self.lock:
                 ret, frame = self.cap.read()
                 if not ret:
                     logging.warning("无法从PC摄像头中获取画面")
-                    return None, 0, False
+                    return None
                 self.frame = cv2.flip(frame, 1)
-                return self.frame, 0, False
+                return self.frame
         except Exception as e:
             logging.error(f"获取视频帧时发生错误: \n{e}")
-            return None, 0, False
+            return None
 
     def recognize_faces(self, frame):
         """人脸识别"""
@@ -310,7 +312,8 @@ class FaceLogin:
                                           (0, 255, 0), 2)
 
                             if self.isHandRecognize:
-                                frame = hand_recognize(frame, bbox)
+                                frame, self.label = hand_recognize(frame, bbox)
+                                self.gesture_control()
 
                             # 其他人统一标红
                             for face in face_results[1:]:
@@ -337,7 +340,7 @@ class FaceLogin:
 
     def get_frame_info(self):
         """获取视频帧并进行人脸识别"""
-        frame, _, _ = self.get_frame()
+        frame = self.get_frame()
         if frame is None:
             return None, 0, False
         frame, face_count, face_exists = self.recognize_faces(frame)
@@ -348,14 +351,24 @@ class FaceLogin:
             return None, 0, False
 
 
+    def gesture_control(self):
+        """手势控制无人机"""
+        try:
+            from myapp.drone import control_drone
+            if self.label:  # 只有当有有效手势标签时才发送命令
+                control_drone(self.label)
+        except Exception as e:
+            logging.error(f"手势控制无人机时发生错误: \n{e}")
+
+
 camera = FaceLogin()
 
 
 def gen(camera):
     while True:
-        # if not camera.isProcessingFrame:
-        #     time.sleep(0.1)  # 等待一段时间后再次检查
-        #     continue
+        if not camera.isProcessingFrame:
+            time.sleep(0.1)  # 等待一段时间后再次检查
+            continue
         frame, face_count, face_exists = camera.get_frame_info()
         if frame is not None:
             yield (b'--frame\r\n'
@@ -381,20 +394,64 @@ def turn_pc_camera(request):
             camera.isProcessingFrame = True
             return JsonResponse({'status': 1, 'message': '打开电脑摄像头'})
     except Exception as e:
-        logging.error(f"Error turning camera: {e}")  # 增加日志记录
+        logging.error(f"Error turning camera: {e}")  
         return JsonResponse({'status': 'error', 'message': str(e)})
 
 
 def turn_hand(request):
     try:
+        # 使用辅助函数检查无人机是否已连接
+        from myapp.drone import is_drone_connected
+        
+        if not is_drone_connected():
+            logging.error("无人机未连接或未正确初始化")
+            camera.isHandRecognize = False
+            return JsonResponse({'status': 0, 'message': '无人机未连接，无法开启手势检测'})
+        
         if camera.isHandRecognize:
             camera.isHandRecognize = False
             return JsonResponse({'status': 0, 'message': '关闭手势检测'})
-        elif not camera.isHandRecognize:
+        else:
             camera.isHandRecognize = True
             return JsonResponse({'status': 1, 'message': '打开手势检测'})
     except Exception as e:
+        logging.error(f"手势检测操作出错: {e}")
+        camera.isHandRecognize = False  # 确保出错时关闭手势检测
         return JsonResponse({'status': 'error', 'message': str(e)})
+
+# def turn_hand(request):
+#     try:
+#         # 重新导入，确保获取最新的global_drone实例
+#         from myapp.drone import global_drone
+#         # print(global_drone)
+#         # print(global_drone.is_connected())
+
+#         # 检查global_drone是否为None
+#         if global_drone is None:
+#             logging.error("global_drone 为 None，无人机可能未正确初始化")
+#             camera.isHandRecognize = False
+#             return JsonResponse({'status': 0, 'message': '无人机未连接，无法开启手势检测'})
+        
+#         # 安全地调用is_connected方法
+#         try:
+#             is_connected = global_drone.is_connected()
+#             if not is_connected:
+#                 camera.isHandRecognize = False
+#                 return JsonResponse({'status': 0, 'message': '无人机未连接，无法开启手势检测'})
+#         except AttributeError:
+#             logging.error("global_drone 没有 is_connected 方法")
+#             camera.isHandRecognize = False
+#             return JsonResponse({'status': 0, 'message': '无人机对象异常，无法开启手势检测'})
+
+#         if camera.isHandRecognize:
+#             camera.isHandRecognize = False
+#             return JsonResponse({'status': 0, 'message': '关闭手势检测'})
+#         elif not camera.isHandRecognize:
+#             camera.isHandRecognize = True
+#             return JsonResponse({'status': 1, 'message': '打开手势检测'})
+#     except Exception as e:
+#         logging.error(f"error :{e}")
+#         return JsonResponse({'status': 'error', 'message': str(e)})
 
 
 @csrf_exempt

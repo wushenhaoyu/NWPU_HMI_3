@@ -47,10 +47,9 @@ def wifi_connect(target_ssid, max_retries=3):
         if is_connected(target_ssid):
             logging.info(f"已经连接到 {target_ssid}")
             return {'status': 1, 'message': f'已连接目标WiFi: {target_ssid}'}
-            # break
 
         logging.info(f"未连接到 {target_ssid}，正在尝试连接...")
-        # print(f"未连接到 {target_ssid}，正在尝试连接...")
+        print(f"未连接到 {target_ssid}，正在尝试连接...")
 
         try:
             # 扫描网络
@@ -118,7 +117,6 @@ def wifi_connect(target_ssid, max_retries=3):
     logging.error(f"连接到 {target_ssid} 失败，达到最大重试次数")
     return {'status': 0, 'message': f"连接到 {target_ssid} 失败，达到最大重试次数"}
 
-        # time.sleep(5)
 
 
 
