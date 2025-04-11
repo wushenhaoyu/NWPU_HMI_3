@@ -8,6 +8,9 @@
           <div style="text-align: center;font-size: larger;font-weight: 900;color: black;background-color: #e9eef3; height: 5vh;line-height: 5vh;">摄像头画面</div>
             <div v-if="isShowImg1 && isLogin !== 2">
               <img   :src="imgurl1" alt="electron-vue" style="width:100%;height:90%">
+                <div v-if="isDroneCameraOpen" style="position: absolute; bottom: 55px; left: -8px; width: 30%; height: 30%;">
+                  <img :src="imgurl2" alt="drone-camera" style="width:100%; height:100%; object-fit: contain;">
+                </div>
             </div>
             <div v-if="!isShowImg1 && isLogin !== 2">
               <img  style="height: 100%;width: 100%;object-fit: contain;" src="~@/assets/bg.png" alt="electron-vue" >
@@ -131,12 +134,15 @@
 
 
 
-          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+          <div style="font-weight: 900;margin-top: -3vh;display: flex;justify-content: space-evenly;">
             <el-button type="primary" style="width: 80%;font-weight: 600;" @click="toggleDroneConnection"  v-loading.fullscreen.lock="fullscreenLoading">
               {{ isDroneConnected ? '断开无人机链接' : '连接无人机' }}
             </el-button>
           </div>
-
+          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+            <el-button type="primary" style="width: 80%;font-weight: 600;" @click="openCamera2">
+              {{isDroneCameraOpen ? '关闭' : '打开'}}无人机摄像头</el-button>
+          </div>
           <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
             <el-button type="primary" style="width: 80%;font-weight: 600;" @click="switchboard" >切换至无人机</el-button>
           </div>
@@ -206,12 +212,15 @@
 
           <div style="height: 8vh;"></div>
 
-          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+          <div style="font-weight: 900;margin-top: -3vh;display: flex;justify-content: space-evenly;">
             <el-button type="primary" style="width: 80%;font-weight: 600;" @click="toggleDroneConnection"  v-loading.fullscreen.lock="fullscreenLoading">
               {{ isDroneConnected ? '断开无人机链接' : '连接无人机' }}
             </el-button>
           </div>
-
+          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+            <el-button type="primary" style="width: 80%;font-weight: 600;" @click="openCamera2">
+              {{isDroneCameraOpen ? '关闭' : '打开'}}无人机摄像头</el-button>
+          </div>
           <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
             <el-button type="primary" style="width: 80%;font-weight: 600;" @click="switchboard" >切换至地面站</el-button>
           </div>
@@ -222,10 +231,6 @@
           <div style="height: 40vh;"></div>
           <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
           <el-button type="primary" style="width: 80%;font-weight: 600;" @click="openCamera2">开启人脸跟随</el-button>
-        </div>
-        <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-          <el-button type="primary" style="width: 80%;font-weight: 600;" @click="openCamera2">
-            {{isDroneCameraOpen ? '关闭' : '打开'}}无人机摄像头</el-button>
         </div>
         </div>
         <!---------------------------------------------------------->
@@ -353,7 +358,7 @@ import SystemInformation from './LandingPage/SystemInformation'
         // HeadLeftCount : 0,
         // HeadRightCount : 0,
         // HeadShakeCount : 0,
-        voiceAction: -1,
+        voiceAction: "",
         isRecordingVoice: false,
         isVoice:false,
         isShowImg1:false,
@@ -443,18 +448,23 @@ import SystemInformation from './LandingPage/SystemInformation'
         return `${this.imgurl2_}?t=${this.timestamp}`;
       },
       getVoiceAction(){
-        if(this.voiceAction === 0){
+        if(this.voiceAction === "takeoff"){
+          this.sendCommand("takeoff")
           return "起飞"
-      }else if(this.voiceAction === 1){
+      }else if(this.voiceAction === "landing"){
+          this.sendCommand("landing")
           return "降落"
-      }else if(this.voiceAction === 2){
+      }else if(this.voiceAction === "forward"){
+          this.sendCommand("forward")
           return "前进"
-      }else if(this.voiceAction === 3){
+      }else if(this.voiceAction === "backward"){
+          this.sendCommand("backward")
           return "后退"
-        }else if(this.voiceAction === 4){
-          return "降落"
+        }else if(this.voiceAction === "up"){
+          this.sendCommand("up")
+          return "升高"
         }else{
-          return "无命令"
+          return ""
         }
       }
 
@@ -618,7 +628,7 @@ import SystemInformation from './LandingPage/SystemInformation'
                 message: '识别成功',
                 type: 'success'
               });
-              this.voiceAction = response.data.data;
+              this.voiceAction = response.data.command;
             } else {
               this.$message({
                 message: '识别失败',

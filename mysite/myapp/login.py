@@ -401,12 +401,17 @@ def turn_pc_camera(request):
 def turn_hand(request):
     try:
         # 使用辅助函数检查无人机是否已连接
-        from myapp.drone import is_drone_connected
+        from myapp.drone import is_drone_connected,is_stream_on
 
         if not is_drone_connected():
             logging.error("无人机未连接或未正确初始化")
             camera.isHandRecognize = False
             return JsonResponse({'status': 0, 'message': '无人机未连接，无法开启手势检测'})
+
+        if not is_stream_on():
+            logging.error("无人机摄像头未开启")
+            camera.isHandRecognize = False
+            return JsonResponse({'status': 0, 'message': '无人机摄像头未开启，无法开启手势检测'})
 
         if camera.isHandRecognize:
             camera.isHandRecognize = False

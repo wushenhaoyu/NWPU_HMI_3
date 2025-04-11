@@ -32,7 +32,7 @@ urlpatterns = [
 
     # ----------电脑控制部分---------#
     path("turn_hand", login.turn_hand, name="turn_hand"),
-    path("turn_voice",voice.turn_voice, name="turn_voice"),
+    path("turn_voice", voice.turn_voice, name="turn_voice"),
     path("record_voice", voice.record_voice, name="record_voice"),
     # path("turn_hand_point", login.turn_hand_point, name="turn_hand_point"),
 
