@@ -142,6 +142,10 @@ class Voice(nn.Module):
         command = orders_dic[index]
         print(command)
 
+        from myapp.drone import control_drone
+        if command:  # 只有当有有效手势标签时才发送命令
+            control_drone(command)
+
         return command
         # return [torch.argmax(prediction).item()]
 

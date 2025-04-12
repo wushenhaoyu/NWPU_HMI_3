@@ -25,7 +25,6 @@ urlpatterns = [
     
     # ---------登录部分---------#
     path("turn_pc_camera", login.turn_pc_camera, name="turn_pc_camera"),
-    # path("turn_point", login.turn_point, name="turn_point"),
     path("pc_video", login.video_feed, name="pc_video"),#output
     path("storage_face", login.storage_face, name="storage_face"),
     path("login_get_frame_info", login.get_frame_info, name="login_get_frame_info"),
@@ -34,14 +33,15 @@ urlpatterns = [
     path("turn_hand", login.turn_hand, name="turn_hand"),
     path("turn_voice", voice.turn_voice, name="turn_voice"),
     path("record_voice", voice.record_voice, name="record_voice"),
-    # path("turn_hand_point", login.turn_hand_point, name="turn_hand_point"),
+
 
     # ---------无人机部分---------#
+    path("drone_video", drone.video_stream, name="drone_video"),
     path("connect_drone", drone.connect_drone, name="connect_drone"),
     path("disconnect_drone", drone.disconnect_drone, name="disconnect_drone"),
     path("turn_drone_camera", drone.turn_drone_camera, name="turn_drone_camera"),
-    path("drone_video", drone.video_stream, name="drone_video"),
-    path("get_current_state", drone.get_current_state, name="get_current_state"),
     path("drone_control", drone.control, name="drone_control"),
     path("update_speed", drone.update_speed, name="update_speed"),
+    path("get_current_state", drone.get_current_state, name="get_current_state"),
+    path("turn_face_track", drone.turn_face_track, name="turn_face_track"),
 ]

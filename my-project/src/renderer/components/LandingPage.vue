@@ -214,7 +214,7 @@
 
           <div style="font-weight: 900;margin-top: -3vh;display: flex;justify-content: space-evenly;">
             <el-button type="primary" style="width: 80%;font-weight: 600;" @click="toggleDroneConnection"  v-loading.fullscreen.lock="fullscreenLoading">
-              {{ isDroneConnected ? '断开无人机链接' : '连接无人机' }}
+              {{ isDroneConnected ? '断开无人机连接' : '连接无人机' }}
             </el-button>
           </div>
           <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
@@ -230,7 +230,8 @@
         <div v-if="value2===2">
           <div style="height: 40vh;"></div>
           <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-          <el-button type="primary" style="width: 80%;font-weight: 600;" @click="openCamera2">开启人脸跟随</el-button>
+          <el-button type="primary" style="width: 80%;font-weight: 600;" @click="faceTrack">
+            {{ isFaceTracking ? '停止' : '开启' }}人脸跟随</el-button>
         </div>
         </div>
         <!---------------------------------------------------------->
@@ -352,6 +353,7 @@ import SystemInformation from './LandingPage/SystemInformation'
       return {
         //
         fullscreenLoading: false,
+        // isLogin: 0,
         isLogin: 2,
         // EyeCount : 0,
         // MouthCount : 0,
@@ -366,6 +368,7 @@ import SystemInformation from './LandingPage/SystemInformation'
         isShowImg2:false,
         isDroneCameraOpen:false,
         isDroneConnected:false,
+        isFaceTracking: false,
         isFace:false,
         isPoint:false,
         isAlign:false,
@@ -449,19 +452,19 @@ import SystemInformation from './LandingPage/SystemInformation'
       },
       getVoiceAction(){
         if(this.voiceAction === "takeoff"){
-          this.sendCommand("takeoff")
+          // this.sendCommand("takeoff")
           return "起飞"
       }else if(this.voiceAction === "landing"){
-          this.sendCommand("landing")
+          // this.sendCommand("landing")
           return "降落"
       }else if(this.voiceAction === "forward"){
-          this.sendCommand("forward")
+          // this.sendCommand("forward")
           return "前进"
       }else if(this.voiceAction === "backward"){
-          this.sendCommand("backward")
+          // this.sendCommand("backward")
           return "后退"
         }else if(this.voiceAction === "up"){
-          this.sendCommand("up")
+          // this.sendCommand("up")
           return "升高"
         }else{
           return ""
@@ -536,6 +539,7 @@ import SystemInformation from './LandingPage/SystemInformation'
           this.connectDrone();
         }
       },
+
       connectDrone()
       {
         this.fullscreenLoading = true;
@@ -568,6 +572,7 @@ import SystemInformation from './LandingPage/SystemInformation'
             });
         });
     },
+
     disconnectDrone() {
       this.$http.get('http://127.0.0.1:8000/disconnect_drone')
         .then(response => {
@@ -576,13 +581,14 @@ import SystemInformation from './LandingPage/SystemInformation'
               message: response.data.message,
               type: 'success'
             });
-            this.isDroneConnected = false;
+
           } else {
             this.$message({
               message: response.data.message,
               type: 'error'
             });
           }
+          this.isDroneConnected = false;
         })
         .catch(error => {
           console.error(error);
@@ -617,7 +623,7 @@ import SystemInformation from './LandingPage/SystemInformation'
             message: '正在录音，请稍后',
             type: 'warning'
           });
-          return;
+
         }else{
           this.startProgress(); // 启动进度条
           this.isRecordingVoice = true;
@@ -643,11 +649,18 @@ import SystemInformation from './LandingPage/SystemInformation'
         }
 
       },
+
       // 前端按键按下控制无人机动作
       sendCommand(command) {
         this.$http.post('http://127.0.0.1:8000/drone_control', { command: command })
             .then(response => {
                 console.log(response.data);
+                if(this.isDroneConnected === false){
+                  this.$message({
+                    message: "无人机摄像头未打开",
+                    type: 'error'
+                  });
+                }
                 if(response.data.status === 1){
                   this.$message({
                     message: response.data.message,
@@ -693,6 +706,34 @@ import SystemInformation from './LandingPage/SystemInformation'
               });
             });
         },
+
+      faceTrack(){
+        this.$http.get('http://127.0.0.1:8000/turn_face_track')
+        .then(response => {
+          if(response.data.status === 1){
+            this.isFaceTracking = true;
+            this.$message({
+              message: response.data.message,
+              type: 'success'
+            });
+          }
+          else if(response.data.status === 0){
+            this.isFaceTracking = false;
+            this.$message({
+              message: response.data.message,
+              type: 'error'
+            });
+          }
+        })
+        .catch(error => {
+          console.error(error);
+          this.$message({
+            message: '人脸跟随操作失败',
+            type: 'error'
+          });
+        })
+      },
+
       openVoice(){
         this.$http.get('http://127.0.0.1:8000/turn_voice')
         .then(response => {
@@ -708,49 +749,8 @@ import SystemInformation from './LandingPage/SystemInformation'
 
       redirectToAdmin() {
         window.open("http://127.0.0.1:8000/admin/", "_blank");
-  },
+      },
 
-    // turnOnGetCount() {
-    //   this.isGettingCount = true;
-    //   this.intervalId = setInterval(() => {
-    //     this.getCount();
-    //     if (!this.isGettingCount) {
-    //       clearInterval(this.intervalId);
-    //     }
-    //   }, 200);
-    // },
-    // turnoffGetCount() {
-    //   this.isGettingCount = false;
-    // },
-    // controlGetCount(sign) {
-    //   if (sign) {
-    //     console.log(this.isEye, this.isMouth, this.isHead);
-    //     if ((this.isHead && !this.isMouth && !this.isEye) ||
-    //         (!this.isHead && this.isMouth && !this.isEye) ||
-    //         (!this.isHead && !this.isMouth && this.isEye)) {
-    //
-    //       this.turnOnGetCount();
-    //     }
-    //   } else {
-    //     if (!this.isHead && !this.isMouth && !this.isEye) {
-    //       this.turnoffGetCount();
-    //       console.log("turnoffGetCount");
-    //     }
-    //   }
-    //
-    // },
-    //
-    // getCount() {
-    //   this.$http.get('http://127.0.0.1:8000/get_count')
-    //       .then(response => {
-    //         console.log(response.data);
-    //         this.EyeCount = response.data.EyeCount;
-    //         this.MouthCount = response.data.MouthCount;
-    //         this.HeadLeftCount = response.data.HeadLeftCount;
-    //         this.HeadRightCount = response.data.HeadRightCount;
-    //         this.HeadShakeCount = response.data.HeadShakeCount;
-    //       })
-    // },
     change() {
       let data = {'weight': this.value}
       this.$http.post('http://127.0.0.1:8000/weight', data)
@@ -765,81 +765,6 @@ import SystemInformation from './LandingPage/SystemInformation'
       this.$electron.shell.openExternal(link)
     },
 
-    openPoint() {
-      this.$http.get('http://127.0.0.1:8000/turn_point')
-          .then(response => {
-            if (response.data.status === 1) {
-              this.$data.isPoint = true;
-            } else {
-              this.$data.isPoint = false;
-            }
-            console.log(response.data, this.isPoint);
-          })
-    },
-    openAlign() {
-      this.$http.get('http://127.0.0.1:8000/turn_align')
-          .then(response => {
-            if (response.data.status === 1) {
-              this.$data.isAlign = true;
-            } else {
-              this.$data.isAlign = false;
-            }
-            console.log(response.data, this.isAlign);
-          })
-    },
-    openFace() {
-      this.$http.get('http://127.0.0.1:8000/turn_face')
-          .then(response => {
-            if (response.data.status === 1) {
-              this.$data.isFace = true;
-            } else {
-              this.$data.isFace = false;
-            }
-            console.log(response.data, this.isFace);
-          })
-          .catch(error => {
-            console.error(error);
-          })
-    },
-    // openEye() {
-    //   this.$http.get('http://127.0.0.1:8000/turn_eye')
-    //       .then(response => {
-    //         if (response.data.status == 1) {
-    //           this.controlGetCount(1)
-    //           this.$data.isEye = true;
-    //         } else {
-    //           this.$data.isEye = false;
-    //           this.controlGetCount(0)
-    //         }
-    //         console.log(response.data, this.isEye);
-    //       })
-    // },
-    // openMouth() {
-    //   this.$http.get('http://127.0.0.1:8000/turn_mouth')
-    //       .then(response => {
-    //         if (response.data.status == 1) {
-    //           this.controlGetCount(1)
-    //           this.$data.isMouth = true;
-    //         } else {
-    //           this.$data.isMouth = false;
-    //           this.controlGetCount(0)
-    //         }
-    //         console.log(response.data, this.isMouth);
-    //       })
-    // },
-    // openHead() {
-    //   this.$http.get('http://127.0.0.1:8000/turn_head')
-    //       .then(response => {
-    //         if (response.data.status === 1) {
-    //           this.controlGetCount(1)
-    //           this.$data.isHead = true;
-    //         } else {
-    //           this.$data.isHead = false;
-    //           this.controlGetCount(0)
-    //         }
-    //         console.log(response.data, this.isHead);
-    //       })
-    // },
     openHand() {
       this.$http.get('http://127.0.0.1:8000/turn_hand')
           .then(response => {
@@ -858,26 +783,7 @@ import SystemInformation from './LandingPage/SystemInformation'
              this.$message.error('手势检测操作失败');
            });
     },
-    // openHandPoint() {
-    //   this.$http.get('http://127.0.0.1:8000/turn_hand_point')
-    //       .then(response => {
-    //         if (response.data.status == 1) {
-    //           this.$data.isHandPoint = true;
-    //         } else {
-    //           this.$data.isHandPoint = false;
-    //         }
-    //         console.log(response.data, this.isHandPoint);
-    //       })
-    // },
-    // reset_count() {
-    //   this.$http.get('http://127.0.0.1:8000/reset_count')
-    //       .then(response => {
-    //         console.log(response.data);
-    //       })
-    //       .catch(error => {
-    //         console.error(error);
-    //       });
-    // },
+
     openCamera1() {
       this.$http.get('http://127.0.0.1:8000/turn_pc_camera')
           .then(response => {
@@ -902,6 +808,7 @@ import SystemInformation from './LandingPage/SystemInformation'
             console.error(error);
           });
     },
+
     openCamera2() {
       this.$http.get('http://127.0.0.1:8000/turn_drone_camera')
           .then(response => {
@@ -979,6 +886,7 @@ import SystemInformation from './LandingPage/SystemInformation'
         }
       })
     },
+
     storageFace() {
       if (!this.isPcCameraOpen) {
         this.$message({
