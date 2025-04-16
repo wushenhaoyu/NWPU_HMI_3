@@ -147,24 +147,16 @@ class Drone:
                     "backward": (0, -self.channel_rod, 0, 0),
                     "up": (0, 0, self.channel_rod, 0),
                     "down": (0, 0, -self.channel_rod, 0),
-                    "rotate_left": (0, 0, 0, self.channel_rod),
-                    "rotate_right": (0, 0, 0, -self.channel_rod)
+                    "rotate_left": (0, 0, 0, -self.channel_rod),
+                    "rotate_right": (0, 0, 0, self.channel_rod)
                 }
 
                 if command in move_commands:
-                    start_time = time.time()
                     self.lr, self.fb, self.ud, self.yv = move_commands[command]
-                    while time.time() - start_time < self.delay:
-                        self.tello.send_rc_control(self.lr, self.fb, self.ud, self.yv)
-                    self.tello.send_rc_control(0, 0, 0, 0)  # 停止
 
-                    # self.tello.send_rc_control(self.lr, self.fb, self.ud, self.yv)
-                    # time.sleep(self.delay)
-                    # self.tello.send_rc_control(0, 0, 0, 0)  # 停止
+                    threading.Thread(target=self._execute_command).start()
 
-                    # threading.Thread(target=self._execute_command).start()
-
-                    # self.command_queue.put(move_commands[command])  # 将命令放入队列
+                    self.command_queue.put(move_commands[command])  # 将命令放入队列
                     return {'status': 1, 'message': CTRL_MAP[command]}
 
                 return {'status': 0, 'message': '未知命令'}
@@ -186,8 +178,10 @@ class Drone:
     def _execute_command(self):
         """执行控制命令的线程函数"""
         try:
+            # print('command1')
             self.tello.send_rc_control(self.lr, self.fb, self.ud, self.yv)
             time.sleep(self.delay)
+            # print('command2')
             self.tello.send_rc_control(0, 0, 0, 0)  # 停止
         except Exception as e:
             logging.error(f"执行控制指令时出错: {e}")
@@ -248,7 +242,7 @@ class Drone:
             speed = 0
             error = 0
         # print("speed: ", speed, "fb: ", fb)
-        # self.tello.send_rc_control(0, fb, 0, speed)
+        self.tello.send_rc_control(0, fb, 0, speed)
         return error
 
     def face_track(self):
@@ -260,14 +254,14 @@ class Drone:
         try:
             # 停止所有控制命令
             # self.tello.send_rc_control(0, 0, 0, 0)
+            print('人脸跟随已停止')
             logging.info("人脸跟随已停止")
         except Exception as e:
             logging.error(f"停止人脸跟随失败: {e}")
 
     def update_speed(self, speed):
         with self.lock:
-            self.speed = max(10, min(20, speed))  # 限制在10-100之间
-            self.tello.set_speed(self.speed)
+            self.channel_rod = max(30, min(100, speed))  # 限制在10-20之间
 
     def get_battery(self):
         with self.lock:

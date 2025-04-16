@@ -265,8 +265,8 @@
 
 
             <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;line-height: 7vh;font-size: 2.5vh;">
-              <div style="width: 35%;text-align: center;">移动速度cm/s</div>
-              <el-input-number v-model="move_speed"  :min="10" :max="20" label="描述文字"></el-input-number>
+              <div style="width: 35%;text-align: center;">移动速度</div>
+              <el-input-number v-model="move_speed"  :min="30" :max="100" label="描述文字"></el-input-number>
             </div>
 
 
