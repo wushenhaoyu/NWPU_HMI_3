@@ -138,16 +138,9 @@ class Voice(nn.Module):
         self.recording = False
         prediction = self(mfcc)
         print(torch.argmax(prediction).item())
-        index = torch.argmax(prediction).item()
-        command = orders_dic[index]
-        print(command)
+        return [torch.argmax(prediction).item()]
 
-        from myapp.drone import control_drone
-        if command:  # 只有当有有效手势标签时才发送命令
-            control_drone(command)
 
-        return command
-        # return [torch.argmax(prediction).item()]
 
 
 def zero_pad(feature, max_length=216):
