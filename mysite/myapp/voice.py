@@ -101,6 +101,7 @@ class Voice(nn.Module):
         prediction = self(mfcc)
         print(torch.argmax(prediction).item())
         return [torch.argmax(prediction).item()]
+    
 
 
 
