@@ -72,7 +72,7 @@ def get_gesture(image, lms_list):
         return "up"
     elif len(up_fingers) == 2 and up_fingers[0] == 8 and up_fingers[1] == 12:
         return "down"
-    elif len(up_fingers) == 2 and up_fingers[0] == 4 and up_fingers[1] == 8 :
+    elif len(up_fingers) == 2 and up_fingers[0] == 4 and up_fingers[1] == 8:
         return "forward"
     elif len(up_fingers) == 3 and up_fingers[0] == 4 and up_fingers[1] == 8 and up_fingers[2] == 12:
         return "backward"

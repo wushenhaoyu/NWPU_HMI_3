@@ -1,284 +1,18 @@
-# import json
-# import re
-# import os
-# import cv2
-# import time
-# import torch
-# import logging
-#
-# from django.views.decorators.csrf import csrf_exempt
-#
-# from . import login, wifi
-# from ultralytics import YOLO
-# from djitellopy import Tello
-# # from myapp.models import Face
-# from insightface.app import FaceAnalysis
-# from django.http import JsonResponse, StreamingHttpResponse
-#
-# logging.basicConfig(
-#     level=logging.INFO,
-#     format='%(asctime)s - %(levelname)s - %(message)s',  # 定义日志格式
-#     datefmt='%Y-%m-%d %H:%M:%S'  # 定义时间格式
-# )
-# # 禁用 pywifi 的日志记录
-# logging.getLogger('pywifi').setLevel(logging.CRITICAL)
-#
-# TELLO_SSID = "TELLO-FDDA9E"
-#
-# LAND = 0
-# TAKEOFF = 1
-# HOVER = 2
-# FOWARD = 3
-# BACK = 4
-# LEFT = 5
-# RIGHT = 6
-#
-# # -------------------------------------------
-# # 指令映射表
-# CTRL_MAP = {
-#     "takeoff":  '起飞',
-#     "land":     '降落',
-#     "up":       '上升',
-#     "down":     '下降',
-#     "forward":  '前进',
-#     "back":     '后退',
-#     "left":     '左移',
-#     "right":    '右移',
-#     "rotate_left":  '向左转',
-#     "rotate_right": '向右转',
-#
-#     "battery": '查询电量'
-# }
-# # -------------------------------------------
-#
-# global drone_video, drone_controller
-#
-#
-# class DroneVideo:
-#     def __init__(self, tello: Tello):
-#         # 人脸识别、手势识别
-#         self.frame = None
-#         self.tello = tello
-#         print("实例化")
-#
-#     def get_frame_info(self):
-#         """
-#         返回无人机摄像头画面
-#         """
-#         try:
-#             if not self.tello.stream_on:
-#                 self.tello.streamon()
-#             self.frame = self.tello.get_frame_read().frame
-#
-#             ret, jpeg = cv2.imencode('.jpg', self.frame)
-#             return jpeg.tobytes()
-#             # return jpeg.tobytes(), face_count, face_exists
-#
-#         except Exception as e:
-#             logging.error(f"Error getting frame: {e}")  # 增加日志记录
-#             return None
-#             # return None, 0, False
-#
-#
-# class DroneController:
-#     def __init__(self, tello: Tello):
-#         self.tello = tello
-#         # RC
-#         self.lr = 0
-#         self.fb = 0
-#         self.ud = 0
-#         self.yv = 0
-#         self.speed = 50
-#         self.delay = 2.5
-#
-#     def key_ctrl(self, key):
-#         """
-#         根据输入控制无人机动作
-#         :param key: 无人机动作对应的id
-#         """
-#         try:
-#             self.lr = self.fb = self.ud = self.yv = 0
-#
-#             print(f"key: {key}")
-#
-#             if key == "takeoff":
-#                 self.tello.takeoff()
-#                 # time.sleep(5)
-#                 # self.tello.land()
-#             elif key == "land":
-#                 self.tello.land()
-#
-#             if key == "left":
-#                 self.lr = -self.speed
-#             elif key == "right":
-#                 self.lr = self.speed
-#
-#             if key == "forward":
-#                 self.fb = self.speed
-#             elif key == "back":
-#                 self.fb = -self.speed
-#
-#             if key == "up":
-#                 self.ud = self.speed
-#             elif key == "down":
-#                 self.ud = -self.speed
-#
-#             if key == "rotate_left":
-#                 self.yv = self.speed
-#             elif key == "rotate_right":
-#                 self.yv = -self.speed
-#
-#             print(f"lr: {self.lr}, fb: {self.fb}, ud: {self.ud}, yv: {self.yv}")
-#             self.tello.send_rc_control(self.lr, self.fb, self.ud, self.yv)
-#             time.sleep(self.delay)
-#             self.tello.send_rc_control(0, 0, 0, 0)
-#
-#             return {'status': 1, 'message': f'{CTRL_MAP[key]}'}
-#
-#         except Exception as e:
-#                 logging.error(f"Error sending RC control: {e}")  # 增加日志记录
-#                 return {'status': 0, 'message': f"Error: {e}"}
-#
-#     def set_delay(self, delay):
-#         self.delay = delay
-#
-#     def set_speed(self, speed):
-#         self.speed = speed
-#
-#     def get_current_state(self):
-#         """{
-#             'pitch': 0,          # 俯仰角
-#             'roll': 0,           # 横滚角
-#             'yaw': 0,            # 航向角
-#             'vgx': 0,            # 水平速度(X轴)
-#             'vgy': 0,            # 水平速度(Y轴)
-#             'vgz': 0,            # 垂直速度(Z轴)
-#             'templ': 0,          # 温度(低)
-#             'temph': 0,          # 温度(高)
-#             'tof': 0,            # ToF(飞行时间传感器)距离
-#             'h': 0,              # 当前高度
-#             'bat': 100,          # 电池电量
-#             'baro': 0.0,         # 气压计高度
-#             'time': 0,           # 飞行时间
-#             'agx': 0.0,          # 加速度(X轴)
-#             'agy': 0.0,          # 加速度(Y轴)
-#             'agz': 0.0,          # 加速度(Z轴)
-#             'wifi': 0            # Wi-Fi 信号强度
-#         }"""
-#         try:
-#             state = self.tello.get_current_state()
-#             return state
-#         except Exception as e:
-#             pass
-#
-#
-# def initialize_drone():
-#     """
-#     初始化无人机对象
-#     """
-#     try:
-#         tello = Tello()
-#         tello.connect()
-#         logging.info("无人机已成功连接并初始化")
-#         return tello
-#     except Exception as e:
-#         logging.error(f"Error initializing drone: {e}")
-#         return None
-#
-#
-# def gen(camera):
-#     """
-#     视频流生成器
-#     """
-#     while True:
-#         frame = camera.get_frame_info()
-#         if frame is not None:
-#             yield (b'--frame\r\n'
-#                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
-#
-#
-# @csrf_exempt
-# def key_input(request, drone_controller):
-#     """
-#     控制面板-键盘控制 对应的按键click后返回request_key
-#     """
-#     try:
-#         data = json.loads(request.body)
-#         request_key = data.get('request_key')
-#         if not request_key:
-#             return JsonResponse({'status': 0, 'message': "无效按键"})
-#
-#         response = drone_controller.key_ctrl(request_key)
-#         return JsonResponse(response) if response else JsonResponse({'status': 0, 'message': "未知命令"})
-#     except Exception as e:
-#         logging.error(f"Error processing key input: {e}")
-#         return JsonResponse({'status': 0, 'message': str(e)})
-#
-#
-# @csrf_exempt
-# def set_delay(request, drone_controller):
-#     """
-#     修改飞机单次移动时间
-#     """
-#     try:
-#         data = json.loads(request.body)
-#         delay = data.get('delay')
-#         if not delay:
-#             return JsonResponse({'status': 0, 'message': "设置无效"})
-#
-#         drone_controller.set_delay(delay)
-#         return JsonResponse({'status': 1, 'message': "设置成功"})
-#     except Exception as e:
-#         logging.error(f"Error setting delay: {e}")
-#         return JsonResponse({'status': 0, 'message': str(e)})
-#
-#
-# def get_wifi_state(request):
-#     """
-#     获取Wi-Fi连接状态
-#     """
-#     try:
-#         response = wifi.wifi_connect(TELLO_SSID)
-#         if response['status'] == 1:
-#             # wifi连接成功后，初始化无人机对象
-#             tello = initialize_drone()
-#             if tello:
-#                 drone_video = DroneVideo(tello)
-#                 drone_controller = DroneController(tello)
-#                 print('1111111111')
-#                 return JsonResponse({'status': 1, 'message': "无人机初始化成功", 'drone': {'video': drone_video, 'controller': drone_controller}})
-#         return JsonResponse(response)
-#     except Exception as e:
-#         logging.error(f"Error getting wifi state: {e}")
-#         return JsonResponse({'status': 0, 'message': str(e)}, status=500)
-#
-#
-# def video_feed(request, drone_video):
-#     """
-#     返回视频流
-#     """
-#     return StreamingHttpResponse(gen(drone_video), content_type='multipart/x-mixed-replace; boundary=frame')
-#
-#
-# def get_current_state(request, drone_controller):
-#     """
-#     获取无人机当前状态
-#     """
-#     try:
-#         state = drone_controller.get_current_state()
-#         return JsonResponse({'status': 1, 'tello_state': state})
-#     except Exception as e:
-#         logging.error(f"Error getting current state: {e}")
-#         return JsonResponse({'status': 0, 'message': str(e)}, status=500)
-
 import json
+import queue
+
 import cv2
 import time
 import logging
+
+import numpy as np
 from django.views.decorators.csrf import csrf_exempt
 from djitellopy import Tello
 from django.http import JsonResponse, StreamingHttpResponse, HttpResponse
 import threading
+
+from insightface.app import FaceAnalysis
+import torch
 
 from myapp import wifi
 
@@ -310,23 +44,36 @@ CTRL_MAP = {
     "battery": '查询电量'
 }
 
+PID = [0.4, 0.4, 0]
+FBRANGE = [30000, 50000]    # forward/backward range
+
 
 class Drone:
     def __init__(self):
         self.tello = None
-        self.is_connected = False
+        self._is_connected = False
         self.frame = None
         self.lock = threading.Lock()
         self.isOpenDroneCamera = False
+
+        self.faceDetect = FaceAnalysis(allowed_modules=['detection'],
+                                providers=['CUDAExecutionProvider', 'CPUExecutionProvider'])
+        self.faceDetect.prepare(ctx_id=0 if torch.cuda.is_available() else -1, det_size=(640, 640))
 
         # 控制参数
         self.lr = 0
         self.fb = 0
         self.ud = 0
         self.yv = 0
-        self.channel_rod = 50   # 设置遥控器的 4 个通道杆量
+        self.channel_rod = 50  # 设置遥控器的 4 个通道杆量
         self.delay = 2.5
-        self.speed = 10     # 无人机速度 10~100cm/s，限制在20cm以内
+        self.speed = 10  # 无人机速度 10~100cm/s，限制在20cm以内
+
+        self.pError = 0
+        self.isTracking = False
+
+        self.command_queue = queue.Queue()
+        self.command_thread = None
 
     def connect(self):
         """连接无人机"""
@@ -334,29 +81,39 @@ class Drone:
             try:
                 self.tello = Tello()
                 self.tello.connect()
-                self.is_connected = True
+                self._is_connected = True
                 logging.info("无人机连接成功")
+
+                # 启动命令处理线程
+                # self.command_thread = threading.Thread(target=self.process_commands)
+                # self.command_thread.start()
+
                 return True
             except Exception as e:
                 logging.error(f"连接失败: {e}")
-                self.is_connected = False
+                self._is_connected = False
                 return False
 
     def is_connected(self):
         """返回连接状态"""
         with self.lock:
-            return self.is_connected
+            return self._is_connected
 
     def get_frame(self):
         """获取视频帧"""
         with self.lock:
-            if not self.is_connected or not self.isOpenDroneCamera:
+            if not self._is_connected or not self.isOpenDroneCamera:
                 return None
 
             try:
                 frame = self.tello.get_frame_read().frame
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                ret, jpeg = cv2.imencode('.jpg', frame)
+                # print(frame.shape)
+                self.frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                if self.isTracking:
+                    self.frame, face_info = self.findFace(self.frame)
+                    self.pError = self.trackFace(face_info)
+
+                ret, jpeg = cv2.imencode('.jpg', self.frame)
                 return jpeg.tobytes() if ret else None
             except Exception as e:
                 logging.error(f"获取视频帧失败: {e}")
@@ -365,7 +122,7 @@ class Drone:
     def control(self, command):
         """执行控制命令"""
         with self.lock:
-            if not self.is_connected:
+            if not self._is_connected:
                 return {'status': 0, 'message': '无人机未连接'}
 
             try:
@@ -395,10 +152,19 @@ class Drone:
                 }
 
                 if command in move_commands:
+                    start_time = time.time()
                     self.lr, self.fb, self.ud, self.yv = move_commands[command]
-                    self.tello.send_rc_control(self.lr, self.fb, self.ud, self.yv)
-                    time.sleep(self.delay)
+                    while time.time() - start_time < self.delay:
+                        self.tello.send_rc_control(self.lr, self.fb, self.ud, self.yv)
                     self.tello.send_rc_control(0, 0, 0, 0)  # 停止
+
+                    # self.tello.send_rc_control(self.lr, self.fb, self.ud, self.yv)
+                    # time.sleep(self.delay)
+                    # self.tello.send_rc_control(0, 0, 0, 0)  # 停止
+
+                    # threading.Thread(target=self._execute_command).start()
+
+                    # self.command_queue.put(move_commands[command])  # 将命令放入队列
                     return {'status': 1, 'message': CTRL_MAP[command]}
 
                 return {'status': 0, 'message': '未知命令'}
@@ -406,19 +172,108 @@ class Drone:
                 logging.error(f"控制指令失败: {e}")
                 return {'status': 0, 'message': str(e)}
 
+    def process_commands(self):
+        while self._is_connected:
+            try:
+                command = self.command_queue.get(timeout=1)  # 从队列中获取命令
+                self.lr, self.fb, self.ud, self.yv = command
+                self._execute_command()
+            except queue.Empty:
+                continue
+            except Exception as e:
+                logging.error(f"处理命令时出错: {e}")
+
+    def _execute_command(self):
+        """执行控制命令的线程函数"""
+        try:
+            self.tello.send_rc_control(self.lr, self.fb, self.ud, self.yv)
+            time.sleep(self.delay)
+            self.tello.send_rc_control(0, 0, 0, 0)  # 停止
+        except Exception as e:
+            logging.error(f"执行控制指令时出错: {e}")
+
+    def findFace(self, frame):
+        faces = self.faceDetect.get(frame)
+
+        faceCenterList = []
+        faceAreaList = []
+
+        if len(faces) == 0:
+            return self.frame, [[0, 0], 0]
+
+        for face in faces:
+            bbox = face['bbox']
+            x1, y1, x2, y2 = int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])
+
+            # 检查边界框坐标是否在有效范围内
+            if x1 < 0 or y1 < 0 or x2 >= self.frame.shape[1] or y2 >= self.frame.shape[0]:
+                return frame, [[0, 0], 0]
+
+            cx = (x1 + x2) // 2
+            cy = (y1 + y2) // 2
+            area = (x2 - x1) * (y2 - y1)
+
+            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+            cv2.circle(frame, (cx, cy), 3, (0, 255, 0), cv2.FILLED)
+
+            faceCenterList.append([cx, cy])
+            faceAreaList.append(area)
+
+            if len(faceAreaList) != 0:
+                maxArea = max(faceAreaList)
+                index = faceAreaList.index(maxArea)
+                return frame, [faceCenterList[index], faceAreaList[index]]
+            else:
+                return frame, [[0, 0], 0]
+
+    def trackFace(self, face_info, w=960):
+        # def trackFace(tello, face_info, w, pid, pError):
+        area = face_info[1]
+        x, y = face_info[0]
+        fb = 0
+
+        error = x - w // 2
+        speed = PID[0] * error + PID[1] * (error - self.pError)
+        speed = int(np.clip(speed, -100, 100))
+        # print(speed)
+
+        if FBRANGE[0] < area < FBRANGE[1]:
+            fb = 0
+        elif area > FBRANGE[1]:
+            fb = -20
+        elif area < FBRANGE[0] and area != 0:
+            fb = 20
+
+        if x == 0:
+            speed = 0
+            error = 0
+        # print("speed: ", speed, "fb: ", fb)
+        # self.tello.send_rc_control(0, fb, 0, speed)
+        return error
+
+    def face_track(self):
+        while self.isTracking:
+            _, face_info = self.findFace()
+            self.pError = self.trackFace(face_info)
+
+    def stop_face_track(self):
+        try:
+            # 停止所有控制命令
+            # self.tello.send_rc_control(0, 0, 0, 0)
+            logging.info("人脸跟随已停止")
+        except Exception as e:
+            logging.error(f"停止人脸跟随失败: {e}")
+
     def update_speed(self, speed):
-        """设置移动速度"""
         with self.lock:
             self.speed = max(10, min(20, speed))  # 限制在10-100之间
             self.tello.set_speed(self.speed)
 
     def get_battery(self):
-        """获取电池电量"""
         with self.lock:
-            return self.tello.get_battery() if self.is_connected else 0
+            return self.tello.get_battery() if self._is_connected else 0
 
     def get_current_state(self):
-        """获取无人机当前状态"""
         with self.lock:
             try:
                 state = self.tello.get_current_state()
@@ -428,24 +283,61 @@ class Drone:
                 return {}
 
     def disconnect(self):
-        """断开连接"""
         with self.lock:
-            if self.is_connected:
+            if self._is_connected:
                 self.tello.streamoff()
                 self.tello.end()
-                self.is_connected = False
+                self._is_connected = False
                 logging.info("无人机断开连接")
+
+    def is_stream(self):
+        with self.lock:
+            return self.tello.stream_on
+
+
+def get_drone():
+    global global_drone
+    return global_drone
+
+
+def is_drone_connected():
+    drone = get_drone()
+    if drone is None:
+        return False
+    try:
+        return drone.is_connected()
+    except AttributeError:
+        return False
+
+
+def is_stream_on():
+    drone = get_drone()
+    if drone is None:
+        return False
+    try:
+        return drone.is_stream()
+    except AttributeError:
+        return False
+
+
+def control_drone(command):
+    drone = get_drone()
+    if drone is None:
+        return {'status': 0, 'message': '无人机未初始化'}
+    try:
+        return drone.control(command)
+    except Exception as e:
+        logging.error(f"控制无人机时出错: {e}")
+        return {'status': 0, 'message': str(e)}
 
 
 @csrf_exempt
 def connect_drone(request):
-    """连接无人机视图"""
     global global_drone
-
-    # 如果已有实例则先断开
-    if global_drone and global_drone.is_connected():
-        global_drone.disconnect()
-        logging.info("已断开之前的无人机连接")
+    # # 如果已有实例则先断开
+    # if global_drone and global_drone.is_connected():
+    #     global_drone.disconnect()
+    #     logging.info("已断开之前的无人机连接")
 
     # 创建新实例
     global_drone = Drone()
@@ -457,22 +349,32 @@ def connect_drone(request):
         return JsonResponse({'status': 0, 'message': f"Wi-Fi 连接失败: {wifi_response['message']}"})
 
     # 尝试连接无人机
-    if global_drone.connect():
-        battery_level = global_drone.get_battery()
+    drone = get_drone()
+    if drone.connect():
+        battery_level = drone.get_battery()
         logging.info(f"无人机连接成功，电池电量: {battery_level}%")
         return JsonResponse({'status': 1, 'message': f'连接成功,电池电量:{battery_level}'})
     else:
         logging.error("无人机连接失败")
         return JsonResponse({'status': 0, 'message': '无人机连接失败'})
+    # if global_drone.connect():
+    #     battery_level = global_drone.get_battery()
+    #     logging.info(f"无人机连接成功，电池电量: {battery_level}%")
+    #     return JsonResponse({'status': 1, 'message': f'连接成功,电池电量:{battery_level}'})
+    # else:
+    #     logging.error("无人机连接失败")
+    #     return JsonResponse({'status': 0, 'message': '无人机连接失败'})
 
 
 @csrf_exempt
 def disconnect_drone(request):
-    """断开无人机连接视图"""
-    global global_drone
+    # try:
+    drone = get_drone()
+    # if drone:
+    #     return JsonResponse({'status': 0, 'message': '未连接无人机'})
 
-    if global_drone and global_drone.is_connected():
-        global_drone.disconnect()
+    if drone and drone.is_connected():
+        drone.disconnect()
         logging.info("无人机已断开连接")
         return JsonResponse({'status': 1, 'message': '无人机已断开连接'})
     else:
@@ -482,8 +384,9 @@ def disconnect_drone(request):
 
 @csrf_exempt
 def control(request):
-    """控制指令视图"""
-    if not global_drone or not global_drone.is_connected():
+    drone = get_drone()
+    if not drone or not drone.is_connected():
+        # print('111')
         return JsonResponse({'status': 0, 'message': '无人机未连接'})
 
     try:
@@ -493,21 +396,21 @@ def control(request):
         if not command:
             return JsonResponse({'status': 0, 'message': '无效指令'})
 
-        response = global_drone.control(command)
-        return JsonResponse(response)
+        return JsonResponse(drone.control(command))
     except Exception as e:
         logging.error(f"处理控制指令时出错: {e}")
         return JsonResponse({'status': 0, 'message': str(e)})
 
 
 def video_stream(request):
-    """视频流视图"""
-    if not global_drone or not global_drone.is_connected():
+    drone = get_drone()
+    if not drone or not drone.is_connected():
         return JsonResponse({'status': 0, 'message': '无人机未连接'})
 
     def generate():
         while True:
-            frame = global_drone.get_frame()
+            frame = drone.get_frame()
+
             if frame:
                 yield (b'--frame\r\n'
                        b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
@@ -516,13 +419,14 @@ def video_stream(request):
 
     return StreamingHttpResponse(generate(), content_type='multipart/x-mixed-replace; boundary=frame')
 
+
 def get_current_state(request):
-    """获取无人机当前状态"""
-    if not global_drone or not global_drone.is_connected():
+    drone = get_drone()
+    if not drone or not drone.is_connected():
         return JsonResponse({'status': 0, 'message': '无人机未连接'})
 
     try:
-        state = global_drone.get_current_state()
+        state = drone.get_current_state()
         return JsonResponse({'status': 1, 'tello_state': state})
     except Exception as e:
         logging.error(f"获取当前状态时出错: {e}")
@@ -531,8 +435,8 @@ def get_current_state(request):
 
 @csrf_exempt
 def update_speed(request):
-    """设置无人机速度"""
-    if not global_drone or not global_drone.is_connected():
+    drone = get_drone()
+    if not drone or not drone.is_connected():
         return JsonResponse({'status': 0, 'message': '无人机未连接'})
 
     try:
@@ -541,7 +445,7 @@ def update_speed(request):
         if not speed:
             return JsonResponse({'status': 0, 'message': '设置无效'})
 
-        global_drone.update_speed(speed)
+        drone.update_speed(speed)
         return JsonResponse({'status': 1, 'message': f"设置成功，速度: {speed} cm/s"})
     except Exception as e:
         logging.error(f"设置速度时出错: {e}")
@@ -549,22 +453,68 @@ def update_speed(request):
 
 
 def turn_drone_camera(request):
+    drone = get_drone()
     try:
         # 检查全局无人机实例是否存在且已连接
-        if global_drone is None or not global_drone.is_connected():
+        if drone is None or not drone.is_connected():
             logging.error("无人机未连接")
             return JsonResponse({'status': 0, 'message': '无人机未连接'})
 
-        with global_drone.lock:
-            if global_drone.isOpenDroneCamera:
-                global_drone.tello.streamoff()
-                global_drone.isOpenDroneCamera = False
+        with drone.lock:
+            if drone.isOpenDroneCamera:
+                drone.tello.streamoff()
+                drone.isOpenDroneCamera = False
                 return JsonResponse({'status': 0, 'message': '关闭无人机摄像头'})
             else:
-                global_drone.tello.streamon()
-                global_drone.isOpenDroneCamera = True
+                drone.tello.streamon()
+                drone.isOpenDroneCamera = True
                 return JsonResponse({'status': 1, 'message': '打开无人机摄像头'})
 
     except Exception as e:
         logging.error(f"Error turning camera: {e}")
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+
+def turn_face_track(request):
+    drone = get_drone()
+    try:
+        if drone is None or not drone.is_connected():
+            logging.error("无人机未连接")
+            return JsonResponse({'status': 0, 'message': '无人机未连接'})
+
+        if not is_stream_on():
+            logging.error("无人机摄像头未开启")
+            return JsonResponse({'status': 0, 'message': '无人机摄像头未开启，无法开启人脸跟随'})
+
+        with drone.lock:
+            drone.isTracking = not drone.isTracking
+            if drone.isTracking:
+                # 启动人脸跟随
+                # start_face_tracking(drone)
+                # drone.face_track()
+                logging.info("开启人脸跟随")
+                return JsonResponse({'status': 1, 'message': '打开人脸跟随'})
+            else:
+                # 停止人脸跟随
+                # stop_face_tracking(drone)
+                logging.info("停止人脸跟随")
+                return JsonResponse({'status': 0, 'message': '停止人脸跟随'})
+
+    except Exception as e:
+        logging.error(f"Error turning face tracking: {e}")
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+
+def start_face_tracking(drone):
+    try:
+        import threading
+        threading.Thread(target=drone.face_track).start()
+    except Exception as e:
+        logging.error(f"启动人脸跟随失败: {e}")
+
+
+def stop_face_tracking(drone):
+    try:
+        drone.stop_face_track()
+    except Exception as e:
+        logging.error(f"停止人脸跟随失败: {e}")

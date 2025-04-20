@@ -1,6 +1,7 @@
 import json
 import os
 import threading
+
 from django.http import JsonResponse, StreamingHttpResponse
 import cv2
 import insightface
@@ -9,12 +10,13 @@ import torch
 import numpy as np
 from scipy.spatial.distance import cosine
 from django.views.decorators.csrf import csrf_exempt
+
+from myapp.drone import global_drone
 from myapp.models import Face
 import re
 import time
 import logging
 from myapp.hand_process import *
-from myapp.drone import global_drone
 
 logging.basicConfig(
     level=logging.INFO,
@@ -86,6 +88,10 @@ class FaceLogin:
         self.frame = None
         self.label = ""  # 手势名称标签
 
+        # 新增标志位，指示是否应该继续处理帧
+        # 解决开摄像头、关闭后，get_frame_info继续运行再次打开摄像头
+        self.isProcessingFrame = False
+
         self.lock = threading.Lock()
 
     def __del__(self):
@@ -129,112 +135,6 @@ class FaceLogin:
             logging.error(f"存储人脸信息时出错： {e}")
             return None
 
-    # def get_frame_info(self):
-    #     """打开人脸识别开关，进行人脸登录
-    #     只允许画面存在一个人，多人时不识别
-    #     Returns:
-    #         1.经过识别并标注的人脸frame
-    #         2.人脸数量
-    #         3.人脸是否在数据库中存在（只有一个人时）
-    #     """
-    #     # if not self.isProcessingFrame:
-    #     #     return None, 0, False
-    #     face_count = 0
-    #     face_exists = False
-    #     try:
-    #         with self.lock:
-    #             ret, frame = self.cap.read()
-    #             if not ret:
-    #                 logging.warning("无法从PC摄像头中获取画面")
-    #                 # self.cap.release()
-    #                 # self.cap = cv2.VideoCapture(0)
-    #                 # ret, frame = self.cap.read()
-    #                 # if not ret:
-    #                 #     logging.error("重新打开摄像头后仍然无法获取画面")
-    #                 return None, face_count, face_exists
-    #             self.frame = cv2.flip(frame,1)
-    #
-    #             # 如果人脸登录
-    #             if self.isFaceRecognize:
-    #                 face_results = []  # 存储人脸识别结果
-    #                 try:
-    #                     faces = self.app.get(self.frame)
-    #                 except Exception as e:
-    #                     logging.error(f"app.get()检测人脸时出错： {e}")
-    #                     faces = []
-    #
-    #                 face_count = len(faces)
-    #                 if face_count == 1:
-    #                     recognized_face = compare_face_with_database(faces[0])
-    #                     if recognized_face is not None:
-    #                         face_exists = True
-    #                     # 如果需要存储人脸且只检测到一张人脸
-    #                     if self.isStorageFace:
-    #                         # 人脸对齐
-    #                         aligned_frame = self.align_face(faces[0], self.frame)
-    #                         aligned_face = self.app.get(aligned_frame)
-    #                         self.storage_face(aligned_frame, aligned_face[0], self.name)
-    #                         self.isStorageFace = False
-    #
-    #                 if not faces:
-    #                     # logging.info("没有检测到人脸")
-    #                     face_results.append({"name": "", "bbox": None})
-    #                 else:
-    #                     # 获取图像中所有在数据库中存在的人脸
-    #                     for index, face in enumerate(faces):
-    #                         try:
-    #                             recognized_face = compare_face_with_database(face)
-    #                             if recognized_face is not None:
-    #                                 face_results.append({
-    #                                     "name": recognized_face.name,
-    #                                     "bbox": face['bbox'],
-    #                                 })
-    #
-    #                         except Exception as e:
-    #                             logging.error(f"识别人脸 {index} 时出错： {e}")
-    #                             face_results.append({"name": "", "bbox": None})
-    #
-    #                     # 如果数据库人脸识别有结果
-    #                     if len(face_results) > 0:
-    #                         # self.firstRecognizedPeople = face_results[0]
-    #                         # logging.info(f"识别到的人脸为：{self.firstRecognizedPeople['name']}")
-    #                         # 以识别出的第一个人为准
-    #                         name = face_results[0]["name"]
-    #                         bbox = face_results[0]["bbox"]
-    #                         cv2.putText(self.frame, name, (int(bbox[0]), int(bbox[1]) - 10),
-    #                                     cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
-    #                         cv2.rectangle(self.frame, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])),
-    #                                       (0, 255, 0), 2)
-    #
-    #                         if self.isHandRecognize:
-    #                             self.frame = hand_recognize(self.frame, bbox)
-    #
-    #                         # 其他人统一标红
-    #                         for face in face_results[1:]:
-    #                             name = face["name"]
-    #                             bbox = face['bbox']
-    #                             cv2.putText(self.frame, name, (int(bbox[0]), int(bbox[1]) - 10),
-    #                                         cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
-    #                             cv2.rectangle(self.frame, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])),
-    #                                           (0, 0, 255), 2)
-    #                     # 数据库中没有存入当前图片中的所有人脸
-    #                     else:
-    #                         # 绘制陌生人边界框
-    #                         for face in faces:
-    #                             bbox = face['bbox']
-    #                             cv2.rectangle(self.frame, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])),
-    #                                           (0, 0, 255), 2)
-    #                             cv2.putText(self.frame, 'Stranger', (int(bbox[0]), int(bbox[1]) - 10),
-    #                                         cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
-    #                         # logging.info("当前画面中的人均未在数据库中,请先存入人脸")
-    #
-    #         ret, jpeg = cv2.imencode('.jpg', self.frame)
-    #         return jpeg.tobytes(), face_count, face_exists
-    #
-    #     except Exception as e:
-    #         logging.warning(f"从PC摄像头中获取画面时发生错误: \n{e}")
-    #         return None, 0, False
-
     def get_frame(self):
         """获取视频帧"""
         if not self.isProcessingFrame:
@@ -244,7 +144,7 @@ class FaceLogin:
                 ret, frame = self.cap.read()
                 if not ret:
                     logging.warning("无法从PC摄像头中获取画面")
-                    return None, 0, False
+                    return None
                 self.frame = cv2.flip(frame, 1)
                 return self.frame
         except Exception as e:
@@ -307,7 +207,7 @@ class FaceLogin:
 
                             if self.isHandRecognize:
                                 frame, self.label = hand_recognize(frame, bbox)
-                                self.get_gesture_ctrl()
+                                self.gesture_control()
 
                             # 其他人统一标红
                             for face in face_results[1:]:
@@ -344,10 +244,13 @@ class FaceLogin:
         else:
             return None, 0, False
 
-    def get_gesture_ctrl(self):
+
+    def gesture_control(self):
         """手势控制无人机"""
         try:
-            global_drone.tello.control(self.label)
+            from myapp.drone import control_drone
+            if self.label:  # 只有当有有效手势标签时才发送命令
+                control_drone(self.label)
         except Exception as e:
             logging.error(f"手势控制无人机时发生错误: \n{e}")
 
@@ -357,6 +260,9 @@ camera = FaceLogin()
 
 def gen(camera):
     while True:
+        if not camera.isProcessingFrame:
+            time.sleep(0.1)  # 等待一段时间后再次检查
+            continue
         frame, face_count, face_exists = camera.get_frame_info()
         if frame is not None:
             yield (b'--frame\r\n'
@@ -382,26 +288,69 @@ def turn_pc_camera(request):
             camera.isProcessingFrame = True
             return JsonResponse({'status': 1, 'message': '打开电脑摄像头'})
     except Exception as e:
-        logging.error(f"Error turning camera: {e}")  # 增加日志记录
+        logging.error(f"Error turning camera: {e}")
         return JsonResponse({'status': 'error', 'message': str(e)})
 
 
 def turn_hand(request):
     try:
-        # 检查无人机是否连接
-        if global_drone is None or not global_drone.is_connected():
+        # 使用辅助函数检查无人机是否已连接
+        from myapp.drone import is_drone_connected,is_stream_on
+
+        if not is_drone_connected():
+            logging.error("无人机未连接或未正确初始化")
             camera.isHandRecognize = False
             return JsonResponse({'status': 0, 'message': '无人机未连接，无法开启手势检测'})
 
+        if not is_stream_on():
+            logging.error("无人机摄像头未开启")
+            camera.isHandRecognize = False
+            return JsonResponse({'status': 0, 'message': '无人机摄像头未开启，无法开启手势检测'})
 
         if camera.isHandRecognize:
             camera.isHandRecognize = False
             return JsonResponse({'status': 0, 'message': '关闭手势检测'})
-        elif not camera.isHandRecognize:
+        else:
             camera.isHandRecognize = True
             return JsonResponse({'status': 1, 'message': '打开手势检测'})
     except Exception as e:
+        logging.error(f"手势检测操作出错: {e}")
+        camera.isHandRecognize = False  # 确保出错时关闭手势检测
         return JsonResponse({'status': 'error', 'message': str(e)})
+
+# def turn_hand(request):
+#     try:
+#         # 重新导入，确保获取最新的global_drone实例
+#         from myapp.drone import global_drone
+#         # print(global_drone)
+#         # print(global_drone.is_connected())
+
+#         # 检查global_drone是否为None
+#         if global_drone is None:
+#             logging.error("global_drone 为 None，无人机可能未正确初始化")
+#             camera.isHandRecognize = False
+#             return JsonResponse({'status': 0, 'message': '无人机未连接，无法开启手势检测'})
+
+#         # 安全地调用is_connected方法
+#         try:
+#             is_connected = global_drone.is_connected()
+#             if not is_connected:
+#                 camera.isHandRecognize = False
+#                 return JsonResponse({'status': 0, 'message': '无人机未连接，无法开启手势检测'})
+#         except AttributeError:
+#             logging.error("global_drone 没有 is_connected 方法")
+#             camera.isHandRecognize = False
+#             return JsonResponse({'status': 0, 'message': '无人机对象异常，无法开启手势检测'})
+
+#         if camera.isHandRecognize:
+#             camera.isHandRecognize = False
+#             return JsonResponse({'status': 0, 'message': '关闭手势检测'})
+#         elif not camera.isHandRecognize:
+#             camera.isHandRecognize = True
+#             return JsonResponse({'status': 1, 'message': '打开手势检测'})
+#     except Exception as e:
+#         logging.error(f"error :{e}")
+#         return JsonResponse({'status': 'error', 'message': str(e)})
 
 
 @csrf_exempt

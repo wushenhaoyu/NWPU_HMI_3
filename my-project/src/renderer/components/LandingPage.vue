@@ -8,6 +8,9 @@
           <div style="text-align: center;font-size: larger;font-weight: 900;color: black;background-color: #e9eef3; height: 5vh;line-height: 5vh;">摄像头画面</div>
             <div v-if="isShowImg1 && isLogin !== 2">
               <img   :src="imgurl1" alt="electron-vue" style="width:100%;height:90%">
+                <div v-if="isDroneCameraOpen" style="position: absolute; bottom: 55px; left: -8px; width: 30%; height: 30%;">
+                  <img :src="imgurl2" alt="drone-camera" style="width:100%; height:100%; object-fit: contain;">
+                </div>
             </div>
             <div v-if="!isShowImg1 && isLogin !== 2">
               <img  style="height: 100%;width: 100%;object-fit: contain;" src="~@/assets/bg.png" alt="electron-vue" >
@@ -36,12 +39,12 @@
           </el-select>
         </div>
 
-                   <!---------------------------------------------------------->
+        <!---------------------------------------------------------->
 
         <div v-if="value1===1">
 
 
-                <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;"
+                <!-- <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;"
                      @click="openPoint">
                   <div style="width: 40%;text-align: center;">关键点显示</div>
                   <el-switch
@@ -49,7 +52,7 @@
                       active-text="开启"
                       inactive-text="关闭">
                   </el-switch>
-                </div>
+                </div> -->
 
 
           <div style="height: 20vh;"></div>
@@ -71,7 +74,7 @@
 
 
         <!---------------------------------------------------------->
-    
+
           <div v-if="value1===2">
             <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;"
                   @click="openHand">
@@ -82,15 +85,11 @@
                   inactive-text="关闭">
               </el-switch>
             </div>
-            
-            <!-- 手势命令照片展示 -->
-              <div style="margin-top: 2vh; display: flex; flex-wrap: wrap; justify-content: space-evenly; gap: 1vw;">
-                <div v-for="(gesture, index) in gestureImages" :key="index" style="width: 30%; text-align: center;">
-                  <img :src="gesture.src" :alt="gesture.name" style="width: 100%; border-radius: 1vw;"/>
-                  <div style="margin-top: 0.5vh; font-weight: 600;">{{ gesture.name }}</div>
-                </div>
-              </div>
 
+            <!-- 手势命令照片展示 -->
+            <div style="margin-top: 2vh; display: flex; flex-wrap: wrap; justify-content: space-evenly; gap: 1vw;">
+                <img src="~@/assets/gesture_control.png" alt="gesture_label" style="height: 70%; width: 70%; border-radius: 1vw;"/>
+            </div>
           </div>
 
           <!---------------------------------------------------------->
@@ -135,12 +134,15 @@
 
 
 
-          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+          <div style="font-weight: 900;margin-top: -3vh;display: flex;justify-content: space-evenly;">
             <el-button type="primary" style="width: 80%;font-weight: 600;" @click="toggleDroneConnection"  v-loading.fullscreen.lock="fullscreenLoading">
               {{ isDroneConnected ? '断开无人机链接' : '连接无人机' }}
             </el-button>
           </div>
-
+          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+            <el-button type="primary" style="width: 80%;font-weight: 600;" @click="openCamera2">
+              {{isDroneCameraOpen ? '关闭' : '打开'}}无人机摄像头</el-button>
+          </div>
           <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
             <el-button type="primary" style="width: 80%;font-weight: 600;" @click="switchboard" >切换至无人机</el-button>
           </div>
@@ -171,98 +173,8 @@
           </el-select>
         </div>
 
-                   <!---------------------------------------------------------->
-
+        <!---------------------------------------------------------->
         <div v-if="value2===1">
-
-
-
-
-          <div style="height: 40vh;"></div>
-          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-          <el-button type="primary" style="width: 80%;font-weight: 600;" @click="openCamera2">开启人脸跟随</el-button>
-        </div>
-        <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-          <el-button type="primary" style="width: 80%;font-weight: 600;" @click="openCamera2">
-            {{isDroneCameraOpen ? '关闭' : '打开'}}无人机摄像头</el-button>
-        </div>
-        </div>
-
-
-           <!---------------------------------------------------------->
-
-
-              <!---------------------------------------------------------->
-        <div v-if="value2===2">
-          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;"
-                     @click="openVoice">
-                  <div style="width: 40%;text-align: center;">使能语音控制</div>
-                  <el-switch
-                      v-model="isVoice"
-                      active-text="开启"
-                      inactive-text="关闭">
-                  </el-switch>
-                </div>
-
-
-
-          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;font-size: 4vh;"> <div style="width: 40%;text-align: center;">当前指令</div>{{ getVoiceAction }}</div>
-
-          <div style="height: 35vh;"></div>
-          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: center;"
-                     >
-                     <el-progress style="width: 80%;" :percentage="progress" :status="progressStatus"  :text-inside="true" :stroke-width="26"/>
-                </div>
-
-
-          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-
-              <el-button type="primary" style="width: 80%;font-weight: 600;" @click="recordVoice" :disabled="!isVoice">开始录音</el-button>
-
-
-          </div>
-        </div>
-           <!---------------------------------------------------------->
-
-        <div v-if="value2===3">
-                <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('takeoff')" >起飞</el-button>
-                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('land')" >降落</el-button>
-                </div>
-
-                <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('up')" >上升</el-button>
-                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('down')" >下降</el-button>
-                </div>
-
-                <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('forward')" >前进</el-button>
-                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('backward')" >后退</el-button>
-                </div>
-
-                <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('left')" >左移</el-button>
-                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('right')" >右移</el-button>
-                </div>
-
-                <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('rotate_left')" >左旋</el-button>
-                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('rotate_right')" >右旋</el-button>
-                </div>
-
-
-            <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;line-height: 7vh;font-size: 2.5vh;">
-              <div style="width: 35%;text-align: center;">移动速度cm/s</div>
-              <el-input-number v-model="move_speed"  :min="10" :max="20" label="描述文字"></el-input-number>
-            </div>
-
-
-            <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-            <el-button type="primary" style="width: 80%;font-weight: 600;" @click="updateSpeed" >设置</el-button>
-            </div>
-        </div>
-           <!---------------------------------------------------------->
-        <div v-if="value2===4">
 
           <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
             <div style="width: 40%;text-align: center;">电池电量：</div>
@@ -300,19 +212,96 @@
 
           <div style="height: 8vh;"></div>
 
-
-
-
-          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+          <div style="font-weight: 900;margin-top: -3vh;display: flex;justify-content: space-evenly;">
             <el-button type="primary" style="width: 80%;font-weight: 600;" @click="toggleDroneConnection"  v-loading.fullscreen.lock="fullscreenLoading">
-              {{ isDroneConnected ? '断开无人机链接' : '连接无人机' }}
+              {{ isDroneConnected ? '断开无人机连接' : '连接无人机' }}
             </el-button>
           </div>
-
+          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+            <el-button type="primary" style="width: 80%;font-weight: 600;" @click="openCamera2">
+              {{isDroneCameraOpen ? '关闭' : '打开'}}无人机摄像头</el-button>
+          </div>
           <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
             <el-button type="primary" style="width: 80%;font-weight: 600;" @click="switchboard" >切换至地面站</el-button>
           </div>
+        </div>
 
+        <!---------------------------------------------------------->
+        <div v-if="value2===2">
+          <div style="height: 40vh;"></div>
+          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+          <el-button type="primary" style="width: 80%;font-weight: 600;" @click="faceTrack">
+            {{ isFaceTracking ? '停止' : '开启' }}人脸跟随</el-button>
+        </div>
+        </div>
+        <!---------------------------------------------------------->
+
+        <!---------------------------------------------------------->
+        <div v-if="value2===3">
+                <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('takeoff')" >起飞</el-button>
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('land')" >降落</el-button>
+                </div>
+
+                <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('up')" >上升</el-button>
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('down')" >下降</el-button>
+                </div>
+
+                <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('forward')" >前进</el-button>
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('backward')" >后退</el-button>
+                </div>
+
+                <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('left')" >左移</el-button>
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('right')" >右移</el-button>
+                </div>
+
+                <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('rotate_left')" >左旋</el-button>
+                  <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('rotate_right')" >右旋</el-button>
+                </div>
+
+
+            <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;line-height: 7vh;font-size: 2.5vh;">
+              <div style="width: 35%;text-align: center;">移动速度cm/s</div>
+              <el-input-number v-model="move_speed"  :min="10" :max="20" label="描述文字"></el-input-number>
+            </div>
+
+
+            <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+            <el-button type="primary" style="width: 80%;font-weight: 600;" @click="updateSpeed" >设置</el-button>
+            </div>
+        </div>
+
+        <!---------------------------------------------------------->
+        <div v-if="value2===4">
+          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;"
+                     @click="openVoice">
+                  <div style="width: 40%;text-align: center;">使能语音控制</div>
+                  <el-switch
+                      v-model="isVoice"
+                      active-text="开启"
+                      inactive-text="关闭">
+                  </el-switch>
+                </div>
+
+          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;font-size: 4vh;"> <div style="width: 40%;text-align: center;">当前指令</div>{{ getVoiceAction }}</div>
+
+          <div style="height: 35vh;"></div>
+          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: center;"
+                     >
+                     <el-progress style="width: 80%;" :percentage="progress" :status="progressStatus"  :text-inside="true" :stroke-width="26"/>
+                </div>
+
+
+          <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+
+              <el-button type="primary" style="width: 80%;font-weight: 600;" @click="recordVoice" :disabled="!isVoice">开始录音</el-button>
+
+
+          </div>
         </div>
 
       </div>
@@ -364,13 +353,14 @@ import SystemInformation from './LandingPage/SystemInformation'
       return {
         //
         fullscreenLoading: false,
+        // isLogin: 0,
         isLogin: 2,
         // EyeCount : 0,
         // MouthCount : 0,
         // HeadLeftCount : 0,
         // HeadRightCount : 0,
         // HeadShakeCount : 0,
-        voiceAction: -1,
+        voiceAction: "",
         isRecordingVoice: false,
         isVoice:false,
         isShowImg1:false,
@@ -378,6 +368,7 @@ import SystemInformation from './LandingPage/SystemInformation'
         isShowImg2:false,
         isDroneCameraOpen:false,
         isDroneConnected:false,
+        isFaceTracking: false,
         isFace:false,
         isPoint:false,
         isAlign:false,
@@ -427,21 +418,22 @@ import SystemInformation from './LandingPage/SystemInformation'
           value: 3,
           label: '无人机状态'
         }],
-        options2: [{
+        options2: [
+        {
           value: 1,
-          label: '人脸操作'
+          label: '无人机状态'
         },
         {
           value: 2,
-          label: '语音控制'
+          label: '人脸操作'
         },
         {
           value: 3,
-          label: '键盘控制'
+          label: '按键控制'
         },
         {
           value: 4,
-          label: '无人机状态'
+          label: '语音控制'
         }],
         value1: 1,
         value2: 1
@@ -459,18 +451,23 @@ import SystemInformation from './LandingPage/SystemInformation'
         return `${this.imgurl2_}?t=${this.timestamp}`;
       },
       getVoiceAction(){
-        if(this.voiceAction === 0){
+        if(this.voiceAction === "takeoff"){
+          // this.sendCommand("takeoff")
           return "起飞"
-      }else if(this.voiceAction === 1){
+      }else if(this.voiceAction === "landing"){
+          // this.sendCommand("landing")
           return "降落"
-      }else if(this.voiceAction === 2){
+      }else if(this.voiceAction === "forward"){
+          // this.sendCommand("forward")
           return "前进"
-      }else if(this.voiceAction === 3){
+      }else if(this.voiceAction === "backward"){
+          // this.sendCommand("backward")
           return "后退"
-        }else if(this.voiceAction === 4){
-          return "降落"
+        }else if(this.voiceAction === "up"){
+          // this.sendCommand("up")
+          return "升高"
         }else{
-          return "无命令"
+          return ""
         }
       }
 
@@ -542,6 +539,7 @@ import SystemInformation from './LandingPage/SystemInformation'
           this.connectDrone();
         }
       },
+
       connectDrone()
       {
         this.fullscreenLoading = true;
@@ -574,6 +572,7 @@ import SystemInformation from './LandingPage/SystemInformation'
             });
         });
     },
+
     disconnectDrone() {
       this.$http.get('http://127.0.0.1:8000/disconnect_drone')
         .then(response => {
@@ -582,13 +581,14 @@ import SystemInformation from './LandingPage/SystemInformation'
               message: response.data.message,
               type: 'success'
             });
-            this.isDroneConnected = false;
+
           } else {
             this.$message({
               message: response.data.message,
               type: 'error'
             });
           }
+          this.isDroneConnected = false;
         })
         .catch(error => {
           console.error(error);
@@ -623,7 +623,7 @@ import SystemInformation from './LandingPage/SystemInformation'
             message: '正在录音，请稍后',
             type: 'warning'
           });
-          return;
+
         }else{
           this.startProgress(); // 启动进度条
           this.isRecordingVoice = true;
@@ -634,7 +634,7 @@ import SystemInformation from './LandingPage/SystemInformation'
                 message: '识别成功',
                 type: 'success'
               });
-              this.voiceAction = response.data.data;
+              this.voiceAction = response.data.command;
             } else {
               this.$message({
                 message: '识别失败',
@@ -649,11 +649,18 @@ import SystemInformation from './LandingPage/SystemInformation'
         }
 
       },
+
       // 前端按键按下控制无人机动作
       sendCommand(command) {
         this.$http.post('http://127.0.0.1:8000/drone_control', { command: command })
             .then(response => {
                 console.log(response.data);
+                if(this.isDroneConnected === false){
+                  this.$message({
+                    message: "无人机摄像头未打开",
+                    type: 'error'
+                  });
+                }
                 if(response.data.status === 1){
                   this.$message({
                     message: response.data.message,
@@ -699,6 +706,34 @@ import SystemInformation from './LandingPage/SystemInformation'
               });
             });
         },
+
+      faceTrack(){
+        this.$http.get('http://127.0.0.1:8000/turn_face_track')
+        .then(response => {
+          if(response.data.status === 1){
+            this.isFaceTracking = true;
+            this.$message({
+              message: response.data.message,
+              type: 'success'
+            });
+          }
+          else if(response.data.status === 0){
+            this.isFaceTracking = false;
+            this.$message({
+              message: response.data.message,
+              type: 'error'
+            });
+          }
+        })
+        .catch(error => {
+          console.error(error);
+          this.$message({
+            message: '人脸跟随操作失败',
+            type: 'error'
+          });
+        })
+      },
+
       openVoice(){
         this.$http.get('http://127.0.0.1:8000/turn_voice')
         .then(response => {
@@ -714,49 +749,8 @@ import SystemInformation from './LandingPage/SystemInformation'
 
       redirectToAdmin() {
         window.open("http://127.0.0.1:8000/admin/", "_blank");
-  },
+      },
 
-    // turnOnGetCount() {
-    //   this.isGettingCount = true;
-    //   this.intervalId = setInterval(() => {
-    //     this.getCount();
-    //     if (!this.isGettingCount) {
-    //       clearInterval(this.intervalId);
-    //     }
-    //   }, 200);
-    // },
-    // turnoffGetCount() {
-    //   this.isGettingCount = false;
-    // },
-    // controlGetCount(sign) {
-    //   if (sign) {
-    //     console.log(this.isEye, this.isMouth, this.isHead);
-    //     if ((this.isHead && !this.isMouth && !this.isEye) ||
-    //         (!this.isHead && this.isMouth && !this.isEye) ||
-    //         (!this.isHead && !this.isMouth && this.isEye)) {
-    //
-    //       this.turnOnGetCount();
-    //     }
-    //   } else {
-    //     if (!this.isHead && !this.isMouth && !this.isEye) {
-    //       this.turnoffGetCount();
-    //       console.log("turnoffGetCount");
-    //     }
-    //   }
-    //
-    // },
-    //
-    // getCount() {
-    //   this.$http.get('http://127.0.0.1:8000/get_count')
-    //       .then(response => {
-    //         console.log(response.data);
-    //         this.EyeCount = response.data.EyeCount;
-    //         this.MouthCount = response.data.MouthCount;
-    //         this.HeadLeftCount = response.data.HeadLeftCount;
-    //         this.HeadRightCount = response.data.HeadRightCount;
-    //         this.HeadShakeCount = response.data.HeadShakeCount;
-    //       })
-    // },
     change() {
       let data = {'weight': this.value}
       this.$http.post('http://127.0.0.1:8000/weight', data)
@@ -771,81 +765,6 @@ import SystemInformation from './LandingPage/SystemInformation'
       this.$electron.shell.openExternal(link)
     },
 
-    openPoint() {
-      this.$http.get('http://127.0.0.1:8000/turn_point')
-          .then(response => {
-            if (response.data.status === 1) {
-              this.$data.isPoint = true;
-            } else {
-              this.$data.isPoint = false;
-            }
-            console.log(response.data, this.isPoint);
-          })
-    },
-    openAlign() {
-      this.$http.get('http://127.0.0.1:8000/turn_align')
-          .then(response => {
-            if (response.data.status === 1) {
-              this.$data.isAlign = true;
-            } else {
-              this.$data.isAlign = false;
-            }
-            console.log(response.data, this.isAlign);
-          })
-    },
-    openFace() {
-      this.$http.get('http://127.0.0.1:8000/turn_face')
-          .then(response => {
-            if (response.data.status === 1) {
-              this.$data.isFace = true;
-            } else {
-              this.$data.isFace = false;
-            }
-            console.log(response.data, this.isFace);
-          })
-          .catch(error => {
-            console.error(error);
-          })
-    },
-    // openEye() {
-    //   this.$http.get('http://127.0.0.1:8000/turn_eye')
-    //       .then(response => {
-    //         if (response.data.status == 1) {
-    //           this.controlGetCount(1)
-    //           this.$data.isEye = true;
-    //         } else {
-    //           this.$data.isEye = false;
-    //           this.controlGetCount(0)
-    //         }
-    //         console.log(response.data, this.isEye);
-    //       })
-    // },
-    // openMouth() {
-    //   this.$http.get('http://127.0.0.1:8000/turn_mouth')
-    //       .then(response => {
-    //         if (response.data.status == 1) {
-    //           this.controlGetCount(1)
-    //           this.$data.isMouth = true;
-    //         } else {
-    //           this.$data.isMouth = false;
-    //           this.controlGetCount(0)
-    //         }
-    //         console.log(response.data, this.isMouth);
-    //       })
-    // },
-    // openHead() {
-    //   this.$http.get('http://127.0.0.1:8000/turn_head')
-    //       .then(response => {
-    //         if (response.data.status === 1) {
-    //           this.controlGetCount(1)
-    //           this.$data.isHead = true;
-    //         } else {
-    //           this.$data.isHead = false;
-    //           this.controlGetCount(0)
-    //         }
-    //         console.log(response.data, this.isHead);
-    //       })
-    // },
     openHand() {
       this.$http.get('http://127.0.0.1:8000/turn_hand')
           .then(response => {
@@ -856,34 +775,15 @@ import SystemInformation from './LandingPage/SystemInformation'
               this.$data.isHand = false;
               this.$message.error(response.data.message);
             }
-            
+
             console.log(response.data, this.isHand);
           })
           .catch(error => {
-            console.error(error);
-            this.$message.error('手势检测操作失败');
-          });
+             console.error(error);
+             this.$message.error('手势检测操作失败');
+           });
     },
-    // openHandPoint() {
-    //   this.$http.get('http://127.0.0.1:8000/turn_hand_point')
-    //       .then(response => {
-    //         if (response.data.status == 1) {
-    //           this.$data.isHandPoint = true;
-    //         } else {
-    //           this.$data.isHandPoint = false;
-    //         }
-    //         console.log(response.data, this.isHandPoint);
-    //       })
-    // },
-    // reset_count() {
-    //   this.$http.get('http://127.0.0.1:8000/reset_count')
-    //       .then(response => {
-    //         console.log(response.data);
-    //       })
-    //       .catch(error => {
-    //         console.error(error);
-    //       });
-    // },
+
     openCamera1() {
       this.$http.get('http://127.0.0.1:8000/turn_pc_camera')
           .then(response => {
@@ -908,6 +808,7 @@ import SystemInformation from './LandingPage/SystemInformation'
             console.error(error);
           });
     },
+
     openCamera2() {
       this.$http.get('http://127.0.0.1:8000/turn_drone_camera')
           .then(response => {
@@ -985,6 +886,7 @@ import SystemInformation from './LandingPage/SystemInformation'
         }
       })
     },
+
     storageFace() {
       if (!this.isPcCameraOpen) {
         this.$message({
