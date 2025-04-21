@@ -1,18 +1,18 @@
-import json
-import queue
-
 import cv2
+import json
 import time
+import torch
+import queue
 import logging
-
-import numpy as np
-from django.views.decorators.csrf import csrf_exempt
-from djitellopy import Tello
-from django.http import JsonResponse, StreamingHttpResponse, HttpResponse
 import threading
+import numpy as np
+
+from djitellopy import Tello
+
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse, StreamingHttpResponse, HttpResponse
 
 from insightface.app import FaceAnalysis
-import torch
 
 from myapp import wifi
 
@@ -65,9 +65,8 @@ class Drone:
         self.fb = 0
         self.ud = 0
         self.yv = 0
-        self.channel_rod = 50  # 设置遥控器的 4 个通道杆量
+        self.channel_rod = 50  # UI界面的速度其实是设置遥控器的 4 个通道杆量
         self.delay = 2.5
-        self.speed = 10  # 无人机速度 10~100cm/s，限制在20cm以内
 
         self.pError = 0
         self.isTracking = False
@@ -83,11 +82,6 @@ class Drone:
                 self.tello.connect()
                 self._is_connected = True
                 logging.info("无人机连接成功")
-
-                # 启动命令处理线程
-                # self.command_thread = threading.Thread(target=self.process_commands)
-                # self.command_thread.start()
-
                 return True
             except Exception as e:
                 logging.error(f"连接失败: {e}")
@@ -351,13 +345,6 @@ def connect_drone(request):
     else:
         logging.error("无人机连接失败")
         return JsonResponse({'status': 0, 'message': '无人机连接失败'})
-    # if global_drone.connect():
-    #     battery_level = global_drone.get_battery()
-    #     logging.info(f"无人机连接成功，电池电量: {battery_level}%")
-    #     return JsonResponse({'status': 1, 'message': f'连接成功,电池电量:{battery_level}'})
-    # else:
-    #     logging.error("无人机连接失败")
-    #     return JsonResponse({'status': 0, 'message': '无人机连接失败'})
 
 
 @csrf_exempt
@@ -483,14 +470,9 @@ def turn_face_track(request):
         with drone.lock:
             drone.isTracking = not drone.isTracking
             if drone.isTracking:
-                # 启动人脸跟随
-                # start_face_tracking(drone)
-                # drone.face_track()
                 logging.info("开启人脸跟随")
                 return JsonResponse({'status': 1, 'message': '打开人脸跟随'})
             else:
-                # 停止人脸跟随
-                # stop_face_tracking(drone)
                 logging.info("停止人脸跟随")
                 return JsonResponse({'status': 0, 'message': '停止人脸跟随'})
 
@@ -499,16 +481,3 @@ def turn_face_track(request):
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 
-def start_face_tracking(drone):
-    try:
-        import threading
-        threading.Thread(target=drone.face_track).start()
-    except Exception as e:
-        logging.error(f"启动人脸跟随失败: {e}")
-
-
-def stop_face_tracking(drone):
-    try:
-        drone.stop_face_track()
-    except Exception as e:
-        logging.error(f"停止人脸跟随失败: {e}")

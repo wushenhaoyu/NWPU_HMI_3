@@ -1,21 +1,17 @@
+import re
+import time
 import json
-import os
+import torch
+import logging
 import threading
 
-from django.http import JsonResponse, StreamingHttpResponse
-import cv2
-import insightface
 from insightface.app import FaceAnalysis
-import torch
-import numpy as np
+from django.http import JsonResponse, StreamingHttpResponse
+
 from scipy.spatial.distance import cosine
 from django.views.decorators.csrf import csrf_exempt
 
-from myapp.drone import global_drone
 from myapp.models import Face
-import re
-import time
-import logging
 from myapp.hand_process import *
 
 logging.basicConfig(

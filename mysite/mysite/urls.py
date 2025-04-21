@@ -17,7 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
-from myapp import login,voice, drone
+from myapp import login, voice, drone
 
 urlpatterns = [
     path("admin/", admin.site.urls),
