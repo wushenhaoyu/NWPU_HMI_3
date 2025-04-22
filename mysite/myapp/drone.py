@@ -1,7 +1,6 @@
 import cv2
 import json
 import time
-import torch
 import queue
 import logging
 import threading
@@ -12,9 +11,9 @@ from djitellopy import Tello
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse, StreamingHttpResponse, HttpResponse
 
-from insightface.app import FaceAnalysis
-
 from myapp import wifi
+from .face_analysis import face_analysis_instance
+from .commands import COMMANDS_MAP
 
 # 配置日志
 logging.basicConfig(
@@ -28,24 +27,26 @@ logging.getLogger('pywifi').setLevel(logging.CRITICAL)
 global_drone = None
 TELLO_SSID = "TELLO-FDDA9E"
 
-# 控制指令映射
-CTRL_MAP = {
-    "takeoff": '起飞',
-    "land": '降落',
-    "stop": '停止',
-    "up": '上升',
-    "down": '下降',
-    "forward": '前进',
-    "backward": '后退',
-    "left": '左移',
-    "right": '右移',
-    "rotate_left": '向左转',
-    "rotate_right": '向右转',
-    "battery": '查询电量'
-}
+# # 控制指令映射
+# CTRL_MAP = {
+#     "takeoff": '起飞',
+#     "land": '降落',
+#     "stop": '停止',
+#     "up": '上升',
+#     "down": '下降',
+#     "forward": '前进',
+#     "backward": '后退',
+#     "left": '左移',
+#     "right": '右移',
+#     "rotate_left": '向左转',
+#     "rotate_right": '向右转',
+#     "battery": '查询电量'
+# }
 
+VIDEO_WIDTH = 960
+VIDEO_HEIGHT = 720
 PID = [0.4, 0.4, 0]
-FBRANGE = [30000, 50000]    # forward/backward range
+FBRANGE = [30000, 50000]  # forward/backward range
 
 
 class Drone:
@@ -56,9 +57,7 @@ class Drone:
         self.lock = threading.Lock()
         self.isOpenDroneCamera = False
 
-        self.faceDetect = FaceAnalysis(allowed_modules=['detection'],
-                                providers=['CUDAExecutionProvider', 'CPUExecutionProvider'])
-        self.faceDetect.prepare(ctx_id=0 if torch.cuda.is_available() else -1, det_size=(640, 640))
+        self.faceDetect = face_analysis_instance
 
         # 控制参数
         self.lr = 0
@@ -68,7 +67,8 @@ class Drone:
         self.channel_rod = 50  # UI界面的速度其实是设置遥控器的 4 个通道杆量
         self.delay = 2.5
 
-        self.pError = 0
+        self.hError = 0
+        self.vError = 0
         self.isTracking = False
 
         self.command_queue = queue.Queue()
@@ -105,7 +105,7 @@ class Drone:
                 self.frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 if self.isTracking:
                     self.frame, face_info = self.findFace(self.frame)
-                    self.pError = self.trackFace(face_info)
+                    self.trackFace(face_info)
 
                 ret, jpeg = cv2.imencode('.jpg', self.frame)
                 return jpeg.tobytes() if ret else None
@@ -128,10 +128,10 @@ class Drone:
                     return
                 if command == "takeoff":
                     self.tello.takeoff()
-                    return {'status': 1, 'message': CTRL_MAP[command]}
+                    return {'status': 1, 'message': COMMANDS_MAP[command]}
                 elif command == "land":
                     self.tello.land()
-                    return {'status': 1, 'message': CTRL_MAP[command]}
+                    return {'status': 1, 'message': COMMANDS_MAP[command]}
 
                 # 处理移动命令
                 move_commands = {
@@ -151,7 +151,7 @@ class Drone:
                     threading.Thread(target=self._execute_command).start()
 
                     self.command_queue.put(move_commands[command])  # 将命令放入队列
-                    return {'status': 1, 'message': CTRL_MAP[command]}
+                    return {'status': 1, 'message': COMMANDS_MAP[command]}
 
                 return {'status': 0, 'message': '未知命令'}
             except Exception as e:
@@ -183,12 +183,12 @@ class Drone:
     def findFace(self, frame):
         faces = self.faceDetect.get(frame)
 
-        faceCenterList = []
-        faceAreaList = []
-
         if len(faces) == 0:
             return self.frame, [[0, 0], 0]
-
+        
+        max_area = -1
+        max_face_center = [0, 0]
+        
         for face in faces:
             bbox = face['bbox']
             x1, y1, x2, y2 = int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])
@@ -201,29 +201,32 @@ class Drone:
             cy = (y1 + y2) // 2
             area = (x2 - x1) * (y2 - y1)
 
+            # 更新最大面积和对应的中心点
+            if area > max_area:
+                max_area = area
+                max_face_center = [cx, cy]
+
             cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
             cv2.circle(frame, (cx, cy), 3, (0, 255, 0), cv2.FILLED)
-
-            faceCenterList.append([cx, cy])
-            faceAreaList.append(area)
-
-            if len(faceAreaList) != 0:
-                maxArea = max(faceAreaList)
-                index = faceAreaList.index(maxArea)
-                return frame, [faceCenterList[index], faceAreaList[index]]
-            else:
-                return frame, [[0, 0], 0]
-
-    def trackFace(self, face_info, w=960):
-        # def trackFace(tello, face_info, w, pid, pError):
+            cv2.line(frame, (cx, cy), (VIDEO_WIDTH // 2, VIDEO_HEIGHT // 2), (0, 0, 255), 2)
+                
+        return frame, [max_face_center, max_area]
+    
+    def trackFace(self, face_info):
         area = face_info[1]
         x, y = face_info[0]
         fb = 0
 
-        error = x - w // 2
-        speed = PID[0] * error + PID[1] * (error - self.pError)
-        speed = int(np.clip(speed, -100, 100))
-        # print(speed)
+        # 计算水平和垂直误差
+        error_h = x - VIDEO_WIDTH // 2
+        error_v = y - VIDEO_HEIGHT // 2
+
+        # PID 控制计算
+        speed_h = PID[0] * error_h + PID[1] * (error_h - self.hError)
+        speed_v = PID[0] * error_v + PID[1] * (error_v - self.vError)
+
+        speed_h = int(np.clip(speed_h, -100, 100))
+        speed_v = int(np.clip(speed_v, -100, 100))
 
         if FBRANGE[0] < area < FBRANGE[1]:
             fb = 0
@@ -233,25 +236,17 @@ class Drone:
             fb = 20
 
         if x == 0:
-            speed = 0
-            error = 0
-        # print("speed: ", speed, "fb: ", fb)
-        self.tello.send_rc_control(0, fb, 0, speed)
-        return error
+            speed_h = 0
+            error_h = 0
+        if y == 0:
+            speed_v = 0
+            error_v = 0
 
-    def face_track(self):
-        while self.isTracking:
-            _, face_info = self.findFace()
-            self.pError = self.trackFace(face_info)
+        print("fb: ", fb, "speed_v: ", -speed_v, "speed_h: ", speed_h, "area: ", area)
+        self.tello.send_rc_control(0, fb, -speed_v, speed_h)
 
-    def stop_face_track(self):
-        try:
-            # 停止所有控制命令
-            # self.tello.send_rc_control(0, 0, 0, 0)
-            print('人脸跟随已停止')
-            logging.info("人脸跟随已停止")
-        except Exception as e:
-            logging.error(f"停止人脸跟随失败: {e}")
+        self.hError = error_h
+        self.vError = error_v
 
     def update_speed(self, speed):
         with self.lock:
@@ -276,6 +271,7 @@ class Drone:
                 self.tello.streamoff()
                 self.tello.end()
                 self._is_connected = False
+                self.isTracking = False
                 logging.info("无人机断开连接")
 
     def is_stream(self):
@@ -479,5 +475,3 @@ def turn_face_track(request):
     except Exception as e:
         logging.error(f"Error turning face tracking: {e}")
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
-
-

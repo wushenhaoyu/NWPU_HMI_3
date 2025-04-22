@@ -11,7 +11,7 @@
               <div v-if="isShowImg1 && isLogin !== 2">
                 <img :src="imgurl1" alt="electron-vue" style="width:100%;height:90%">
                 <div v-if="isDroneCameraOpen"
-                     style="position: absolute; bottom: 55px; left: -8px; width: 30%; height: 30%;">
+                     style="position: absolute; bottom: 34px; left: -20px; width: 35%; height: 35%;">
                   <img :src="imgurl2" alt="drone-camera" style="width:100%; height:100%; object-fit: contain;">
                 </div>
               </div>
@@ -192,42 +192,57 @@
                 <!------------------无人机状态----------------------------->
                 <div v-if="value2===1">
 
-                  <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-                    <div style="width: 40%;text-align: center;">电池电量：</div>
-                    <div style="width: 32%;text-align: center;">{{ currentState.bat }}%</div>
-                  </div>
-                  <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-                    <div style="width: 40%;text-align: center;">飞行高度：</div>
-                    <div style="width: 32%;text-align: center;">{{ currentState.h }}cm</div>
-                  </div>
+<!--                  <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">-->
+<!--                    <div style="width: 40%;text-align: center;">电池电量：</div>-->
+<!--                    <div style="width: 32%;text-align: center;">{{ currentState.bat }}%</div>-->
+<!--                  </div>-->
+<!--                  <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">-->
+<!--                    <div style="width: 40%;text-align: center;">飞行高度：</div>-->
+<!--                    <div style="width: 32%;text-align: center;">{{ currentState.h }}cm</div>-->
+<!--                  </div>-->
 
-                  <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-                    <div style="width: 40%;text-align: center;">飞行时间：</div>
-                    <div style="width: 32%;text-align: center;">{{ currentState.time }}s</div>
-                  </div>
+<!--                  <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">-->
+<!--                    <div style="width: 40%;text-align: center;">飞行时间：</div>-->
+<!--                    <div style="width: 32%;text-align: center;">{{ currentState.time }}s</div>-->
+<!--                  </div>-->
 
-                  <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-                    <div style="width: 40%;text-align: center;">信号强度：</div>
-                    <div style="width: 32%;text-align: center;">{{ currentState.wifi }}s</div>
-                  </div>
+<!--                  <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">-->
+<!--                    <div style="width: 40%;text-align: center;">信号强度：</div>-->
+<!--                    <div style="width: 32%;text-align: center;">{{ currentState.wifi }}s</div>-->
+<!--                  </div>-->
 
-                  <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-                    <div style="width: 40%;text-align: center;">加速度：</div>
-                    <div style="width: 32%;text-align: center;">
-                      ({{ currentState.agx }},{{ currentState.agy }},{{ currentState.agz }})
+<!--                  <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">-->
+<!--                    <div style="width: 40%;text-align: center;">加速度：</div>-->
+<!--                    <div style="width: 32%;text-align: center;">-->
+<!--                      ({{ currentState.agx }},{{ currentState.agy }},{{ currentState.agz }})-->
+<!--                    </div>-->
+<!--                  </div>-->
+
+<!--                  <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">-->
+<!--                    <div style="width: 40%;text-align: center;">速度：</div>-->
+<!--                    <div style="width: 32%;text-align: center;">-->
+<!--                      ({{ currentState.vgx }},{{ currentState.vgy }},{{ currentState.vgz }})-->
+<!--                    </div>-->
+<!--                  </div>-->
+
+<!--                  <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">-->
+<!--                    <div style="width: 40%;text-align: center;">航向角</div>-->
+<!--                    <div style="width: 32%;text-align: center;">{{ currentState.pitch }}°</div>-->
+<!--                  </div>-->
+
+                  <div
+                    v-for="(item, index) in stateItems"
+                    :key="index"
+                    class="status-item"
+                  >
+                    <div class="label">{{ item.label }}：</div>
+                    <div class="value">
+                      {{
+                        currentState[item.key] !== null && currentState[item.key] !== undefined
+                          ? item.format(currentState[item.key])
+                          : "N/A"
+                      }}
                     </div>
-                  </div>
-
-                  <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-                    <div style="width: 40%;text-align: center;">速度：</div>
-                    <div style="width: 32%;text-align: center;">
-                      ({{ currentState.vgx }},{{ currentState.vgy }},{{ currentState.vgz }})
-                    </div>
-                  </div>
-
-                  <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-                    <div style="width: 40%;text-align: center;">航向角</div>
-                    <div style="width: 32%;text-align: center;">{{ currentState.pitch }}°</div>
                   </div>
 
                   <div style="height: 8vh;"></div>
@@ -261,48 +276,60 @@
 
                 <!--------------------按键控制---------------------------->
                 <div v-if="value2===3">
-                  <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-                    <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('takeoff')">
-                      起飞
-                    </el-button>
-                    <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('land')">
-                      降落
-                    </el-button>
-                  </div>
+<!--                  <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">-->
+<!--                    <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('takeoff')">-->
+<!--                      起飞-->
+<!--                    </el-button>-->
+<!--                    <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('land')">-->
+<!--                      降落-->
+<!--                    </el-button>-->
+<!--                  </div>-->
 
-                  <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-                    <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('up')">
-                      上升
-                    </el-button>
-                    <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('down')">
-                      下降
-                    </el-button>
-                  </div>
+<!--                  <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">-->
+<!--                    <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('up')">-->
+<!--                      上升-->
+<!--                    </el-button>-->
+<!--                    <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('down')">-->
+<!--                      下降-->
+<!--                    </el-button>-->
+<!--                  </div>-->
 
-                  <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-                    <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('forward')">
-                      前进
-                    </el-button>
-                    <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('backward')">
-                      后退
-                    </el-button>
-                  </div>
+<!--                  <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">-->
+<!--                    <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('forward')">-->
+<!--                      前进-->
+<!--                    </el-button>-->
+<!--                    <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('backward')">-->
+<!--                      后退-->
+<!--                    </el-button>-->
+<!--                  </div>-->
 
-                  <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-                    <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('left')">
-                      左移
-                    </el-button>
-                    <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('right')">
-                      右移
-                    </el-button>
-                  </div>
+<!--                  <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">-->
+<!--                    <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('left')">-->
+<!--                      左移-->
+<!--                    </el-button>-->
+<!--                    <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('right')">-->
+<!--                      右移-->
+<!--                    </el-button>-->
+<!--                  </div>-->
 
-                  <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-                    <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('rotate_left')">
-                      左旋
-                    </el-button>
-                    <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('rotate_right')">
-                      右旋
+<!--                  <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">-->
+<!--                    <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('rotate_left')">-->
+<!--                      左旋-->
+<!--                    </el-button>-->
+<!--                    <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('rotate_right')">-->
+<!--                      右旋-->
+<!--                    </el-button>-->
+<!--                  </div>-->
+
+                  <div v-for="(group, index) in buttonGroups" :key="index" class="button-group">
+                    <el-button
+                      v-for="button in group"
+                      :key="button.command"
+                      type="primary"
+                      class="custom-button"
+                      @click="sendCommand(button.command)"
+                    >
+                      {{ button.label }}
                     </el-button>
                   </div>
 
@@ -335,15 +362,31 @@
                     {{ getVoiceAction }}
                   </div>
 
-                  <div style="height: 35vh;"></div>
+                  <div style="margin-top: 2vh; text-align: center;">
+                    <div style="font-weight: 900; margin-bottom: 1vh;">可用语音指令：</div>
+                    <div style="display: grid; grid-template-columns: repeat(2, auto); gap: 8px; width: 80%; margin: 0 auto;">
+                      <el-tag
+                        v-for="(cmd, index) in commandsMap"
+                        :key="index"
+                        type="info"
+                        style="text-align: center;"
+                      >
+                        {{ cmd }}
+                      </el-tag>
+                    </div>
+                  </div>
+
+                  <div style="height: 3vh;"></div>
 
                   <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: center;">
                     <el-progress style="width: 80%;" :percentage="progress" :status="progressStatus" :text-inside="true" :stroke-width="26"/>
                   </div>
 
-
                   <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-                    <el-button type="primary" style="width: 80%;font-weight: 600;" @click="recordVoice":disabled="!isVoice">
+                    <el-button type="primary" style="width: 80%;font-weight: 600;"
+                               @click="recordVoice"
+                               :disabled="!isVoice"
+                               :title="isVoice ? '' : '请先开启语音控制'">
                       开始录音
                     </el-button>
                   </div>
@@ -388,6 +431,19 @@ export default {
       isHand: false,
       isHandPoint: false,
 
+      commandsMap: {
+        "takeoff": "起飞",
+        "land": "降落",
+        "up": "上升",
+        "down": "下降",
+        "forward": "前进",
+        "backward": "后退",
+        "left": "向左飞",
+        "right": "向右飞",
+        "rotate_left": "向左转",
+        "rotate_right": "向右转",
+      },
+
       isVoice: false,
       voiceAction: "",
       isRecordingVoice: true,
@@ -400,7 +456,33 @@ export default {
       timestamp: Date.now(),
 
       move_speed: 50,
-      fly_height: 100,
+
+      stateItems: [
+        { label: "电池电量", key: "bat", format: (val) => `${val}%` },
+        { label: "飞行高度", key: "h", format: (val) => `${val}cm` },
+        { label: "飞行时间", key: "time", format: (val) => `${val}s` },
+        { label: "信号强度", key: "wifi", format: (val) => `${val} dBm` },
+        {
+          label: "加速度",
+          key: "ag",
+          format: (val) => `(${val.agx}, ${val.agy}, ${val.agz})`
+        },
+        {
+          label: "速度",
+          key: "vg",
+          format: (val) => `(${val.vgx}, ${val.vgy}, ${val.vgz})`
+        },
+        { label: "航向角", key: "pitch", format: (val) => `${val}°` },
+      ],
+
+      buttonGroups: [
+        [{ command: 'takeoff', label: '起飞' }, { command: 'land', label: '降落' }],
+        [{ command: 'up', label: '上升' }, { command: 'down', label: '下降' }],
+        [{ command: 'forward', label: '前进' }, { command: 'backward', label: '后退' }],
+        [{ command: 'left', label: '左移' }, { command: 'right', label: '右移' }],
+        [{ command: 'rotate_left', label: '左旋' }, { command: 'rotate_right', label: '右旋' }]
+      ],
+
       currentState: {
         pitch: 0,
         roll: 0,
@@ -469,27 +551,15 @@ export default {
     },
 
     getVoiceAction() {
-      if (this.voiceAction === "takeoff") {
-        this.sendCommand("takeoff")
-        return "起飞"
-      } else if (this.voiceAction === "landing") {
-        this.sendCommand("landing")
-        return "降落"
-      } else if (this.voiceAction === "forward") {
-        this.sendCommand("forward")
-        return "前进"
-      } else if (this.voiceAction === "backward") {
-        this.sendCommand("backward")
-        return "后退"
-      } else if (this.voiceAction === "up") {
-        this.sendCommand("up")
-        return "升高"
+      if (this.voiceAction in this.commandsMap) {
+        this.sendCommand(this.voiceAction );
+        return this.commandsMap[this.voiceAction]; // 返回中文指令
       } else {
-        return ""
+        return "";
       }
     }
-
   },
+
   watch: {
     //
   },
@@ -763,13 +833,20 @@ export default {
       this.$http.get('http://127.0.0.1:8000/turn_voice')
           .then(response => {
             if (response.data.status === 1) {
-              this.$data.isVoice = true;
+              this.isVoice = true;
+              this.$message.success(response.data.message);
             } else {
-              this.$data.isVoice = false;
+              this.isVoice = false;
+              this.$message.error(response.data.message);
+              this.voiceAction = "";
             }
             console.log(response.data, this.isVoice);
           })
-
+          .catch(error => {
+            console.error(error);
+            this.$message.error('语音控制操作失败');
+            this.voiceAction = ""; // 清除当前命令
+          });
     },
 
     redirectToAdmin() {
@@ -795,10 +872,18 @@ export default {
           .then(response => {
             if (response.data.status === 1) {
               this.$data.isHand = true;
-              this.$message.success(response.data.message);
+              this.$message({
+                  message: response.data.message,
+                  type: 'success'
+                  }
+              );
             } else {
               this.$data.isHand = false;
-              this.$message.error(response.data.message);
+              this.$message({
+                  message: response.data.message,
+                  type: 'error'
+                  }
+              );
             }
 
             console.log(response.data, this.isHand);
@@ -991,11 +1076,38 @@ export default {
 
 <style>
 @import url('https://fonts.googleapis.com/css?family=Source+Sans+Pro');
-
-
 body {
   font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "微软雅黑", Arial, sans-serif;
 }
+</style>
 
+<style scoped>/* 提取公共样式 */
+.status-item {
+  font-weight: 900;
+  margin-top: 2vh;
+  display: flex;
+  justify-content: space-evenly;
+}
 
+.label {
+  width: 40%;
+  text-align: center;
+}
+
+.value {
+  width: 32%;
+  text-align: center;
+}
+</style>
+
+<style>.button-group {
+  font-weight: 900;
+  margin-top: 2vh;
+  display: flex;
+  justify-content: space-evenly;
+}
+.custom-button {
+  width: 35%;
+  font-weight: 600;
+}
 </style>

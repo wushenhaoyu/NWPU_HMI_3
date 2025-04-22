@@ -1,18 +1,17 @@
 import re
 import time
 import json
-import torch
 import logging
 import threading
 
-from insightface.app import FaceAnalysis
+from .face_analysis import face_analysis_instance
 from django.http import JsonResponse, StreamingHttpResponse
 
 from scipy.spatial.distance import cosine
 from django.views.decorators.csrf import csrf_exempt
 
-from myapp.models import Face
-from myapp.hand_process import *
+from .models import Face
+from .hand_process import *
 
 logging.basicConfig(
     level=logging.INFO,
@@ -59,23 +58,19 @@ class FaceLogin:
 
     def __init__(self):
         self.cap = cv2.VideoCapture(0)
-        self.app = FaceAnalysis(allowed_modules=['detection', 'recognition', 'landmark_2d_106'],
-                                providers=['CUDAExecutionProvider', 'CPUExecutionProvider'])
-        self.app.prepare(ctx_id=0 if torch.cuda.is_available() else -1, det_size=(640, 640))
+        self.app = face_analysis_instance
 
         # self.model = YOLO(os.path.join(os.path.dirname(__file__), 'best.pt'))
-        self.mp_hands = mp.solutions.hands
-        self.hands = self.mp_hands.Hands(static_image_mode=False, max_num_hands=2, min_detection_confidence=0.7,
-                                         min_tracking_confidence=0.5)
-        self.mp_drawing = mp.solutions.drawing_utils
+        # self.mp_hands = mp.solutions.hands
+        # self.hands = self.mp_hands.Hands(static_image_mode=False, max_num_hands=2, min_detection_confidence=0.7,
+        #                                  min_tracking_confidence=0.5)
+        # self.mp_drawing = mp.solutions.drawing_utils
 
         self.isOpenPcCamera = False  # 默认开启摄像头
         self.isFaceRecognize = True  # True：开摄像头同时人脸检测
         self.isOpenAlign = False  # 对齐
-        # self.firstRecognizedPeople = None  # 是否已经识别过人脸，用于存在多人脸的识别情况
 
         self.isHandRecognize = False
-        # self.isHandPoint = False
 
         self.isStorageFace = False
         self.name = ""
@@ -116,7 +111,7 @@ class FaceLogin:
 
         return resized_face
 
-    def storage_face(self, frame, face, name):
+    def storage_face(self, face, name):
         try:
             embedding = face['embedding']
 
@@ -172,7 +167,7 @@ class FaceLogin:
                             # 人脸对齐
                             aligned_frame = self.align_face(faces[0], frame)
                             aligned_face = self.app.get(aligned_frame)
-                            self.storage_face(aligned_frame, aligned_face[0], self.name)
+                            self.storage_face(aligned_face[0], self.name)
                             self.isStorageFace = False
 
                     if not faces:
@@ -313,40 +308,6 @@ def turn_hand(request):
         logging.error(f"手势检测操作出错: {e}")
         camera.isHandRecognize = False  # 确保出错时关闭手势检测
         return JsonResponse({'status': 'error', 'message': str(e)})
-
-# def turn_hand(request):
-#     try:
-#         # 重新导入，确保获取最新的global_drone实例
-#         from myapp.drone import global_drone
-#         # print(global_drone)
-#         # print(global_drone.is_connected())
-
-#         # 检查global_drone是否为None
-#         if global_drone is None:
-#             logging.error("global_drone 为 None，无人机可能未正确初始化")
-#             camera.isHandRecognize = False
-#             return JsonResponse({'status': 0, 'message': '无人机未连接，无法开启手势检测'})
-
-#         # 安全地调用is_connected方法
-#         try:
-#             is_connected = global_drone.is_connected()
-#             if not is_connected:
-#                 camera.isHandRecognize = False
-#                 return JsonResponse({'status': 0, 'message': '无人机未连接，无法开启手势检测'})
-#         except AttributeError:
-#             logging.error("global_drone 没有 is_connected 方法")
-#             camera.isHandRecognize = False
-#             return JsonResponse({'status': 0, 'message': '无人机对象异常，无法开启手势检测'})
-
-#         if camera.isHandRecognize:
-#             camera.isHandRecognize = False
-#             return JsonResponse({'status': 0, 'message': '关闭手势检测'})
-#         elif not camera.isHandRecognize:
-#             camera.isHandRecognize = True
-#             return JsonResponse({'status': 1, 'message': '打开手势检测'})
-#     except Exception as e:
-#         logging.error(f"error :{e}")
-#         return JsonResponse({'status': 'error', 'message': str(e)})
 
 
 @csrf_exempt

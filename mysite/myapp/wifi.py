@@ -120,9 +120,9 @@ def wifi_connect(target_ssid, max_retries=3):
     return {'status': 0, 'message': f"连接到 {target_ssid} 失败，达到最大重试次数"}
 
 
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+    target_ssid = "TELLO-FDDA9E"
+    wifi_connect(target_ssid)
 
-
-
-# target_ssid = "TELLO-FDDA9E"
-# wifi_connect(target_ssid)
 

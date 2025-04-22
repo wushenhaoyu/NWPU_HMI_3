@@ -25,7 +25,7 @@ urlpatterns = [
     
     # ---------登录部分---------#
     path("turn_pc_camera", login.turn_pc_camera, name="turn_pc_camera"),
-    path("pc_video", login.video_feed, name="pc_video"),#output
+    path("pc_video", login.video_feed, name="pc_video"),
     path("storage_face", login.storage_face, name="storage_face"),
     path("login_get_frame_info", login.get_frame_info, name="login_get_frame_info"),
 
