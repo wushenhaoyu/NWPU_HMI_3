@@ -235,7 +235,6 @@ class FaceLogin:
         else:
             return None, 0, False
 
-
     def gesture_control(self):
         """手势控制无人机"""
         try:
@@ -286,7 +285,7 @@ def turn_pc_camera(request):
 def turn_hand(request):
     try:
         # 使用辅助函数检查无人机是否已连接
-        from myapp.drone import is_drone_connected,is_stream_on
+        from myapp.drone import is_drone_connected, is_stream_on
 
         if not is_drone_connected():
             logging.error("无人机未连接或未正确初始化")

@@ -59,6 +59,8 @@ class Drone:
 
         self.faceDetect = face_analysis_instance
 
+        self.initialBarometer = 0
+
         # 控制参数
         self.lr = 0
         self.fb = 0
@@ -81,6 +83,7 @@ class Drone:
                 self.tello = Tello()
                 self.tello.connect()
                 self._is_connected = True
+                self.initialBarometer = self.tello.get_barometer()
                 logging.info("无人机连接成功")
                 return True
             except Exception as e:
@@ -260,6 +263,10 @@ class Drone:
         with self.lock:
             try:
                 state = self.tello.get_current_state()
+                state['wifi'] = wifi.get_wifi_signal_strength()
+                print(state['wifi'])
+                # 原始的 state['baro'] 单位是 m，计算后转化为 cm
+                state['baro'] = state['baro']*100 - self.initialBarometer
                 return state
             except Exception as e:
                 logging.error(f"获取当前状态失败: {e}")
@@ -362,8 +369,9 @@ def disconnect_drone(request):
 @csrf_exempt
 def control(request):
     drone = get_drone()
-    if not drone or not drone.is_connected():
+    if drone is None or not drone.is_connected():
         # print('111')
+        logging.error("无人机未连接")
         return JsonResponse({'status': 0, 'message': '无人机未连接'})
 
     try:
@@ -381,7 +389,8 @@ def control(request):
 
 def video_stream(request):
     drone = get_drone()
-    if not drone or not drone.is_connected():
+    if drone is None or not drone.is_connected():
+        logging.error("无人机未连接")
         return JsonResponse({'status': 0, 'message': '无人机未连接'})
 
     def generate():
@@ -399,11 +408,13 @@ def video_stream(request):
 
 def get_current_state(request):
     drone = get_drone()
-    if not drone or not drone.is_connected():
+    if drone is None or not drone.is_connected():
+        logging.error("无人机未连接")
         return JsonResponse({'status': 0, 'message': '无人机未连接'})
 
     try:
         state = drone.get_current_state()
+
         return JsonResponse({'status': 1, 'tello_state': state})
     except Exception as e:
         logging.error(f"获取当前状态时出错: {e}")
@@ -414,6 +425,7 @@ def get_current_state(request):
 def update_speed(request):
     drone = get_drone()
     if not drone or not drone.is_connected():
+        logging.error("无人机未连接")
         return JsonResponse({'status': 0, 'message': '无人机未连接'})
 
     try:

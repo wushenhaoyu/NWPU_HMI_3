@@ -1,3 +1,4 @@
+import logging
 import os
 import wave
 import torch
@@ -10,7 +11,7 @@ import torch.nn.functional as F
 
 from tqdm import tqdm
 from torch import nn
-from asyncio import Lock
+from threading import Lock
 from contextlib import contextmanager
 from django.http import JsonResponse
 from pyaudio import PyAudio
@@ -25,6 +26,8 @@ RECORD_SECONDS = 2
 TOTAL_FRAMES = int(RATE / CHUNK * RECORD_SECONDS)
 
 AUDIO_PATH = os.path.join(os.path.dirname(__file__), 'output.wav')
+
+COLOR_CODE = "\033[37m"
 
 
 # 上下文管理器确保 PyAudio 资源正确释放
@@ -46,11 +49,11 @@ def pyaudio_stream(audio, format_, channels, rate, input_=True, frames_per_buffe
 def record_save(output_path):
     pa = PyAudio()
     frames = []
-    color_code = "\033[37m"
+
     with pyaudio_stream(pa, FORMAT, CHANNELS, RATE) as stream:
         print('Start recording.')
         # for _ in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
-        for _ in tqdm(range(TOTAL_FRAMES), desc=f"{color_code}Recording",
+        for _ in tqdm(range(TOTAL_FRAMES), desc=f"{COLOR_CODE}Recording",
                       bar_format="{l_bar}{bar}",
                       colour="white"):
             data = stream.read(CHUNK)
@@ -97,21 +100,8 @@ class VoiceCNN(nn.Module):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.lock = Lock()
         self.load_weight()
+        self.valid = False  # 是否开启语音控制
         self.isRecording = False
-
-        # self.audio = pyaudio.PyAudio()
-        # self.stream = None
-        # self.device_index = self.get_default_input_device_index()  # 获取默认输入设备
-
-        self.valid = False  #是否有效
-        # self.frames = []
-
-    def get_default_input_device_index(self):
-        for i in range(self.audio.get_device_count()):
-            device_info = self.audio.get_device_info_by_index(i)
-            if device_info['maxInputChannels'] > 0:
-                return i
-        return None
 
     def load_weight(self):
         model_weights_path = os.path.join(os.path.dirname(__file__), 'best_model_weights.pth')
@@ -143,40 +133,8 @@ class VoiceCNN(nn.Module):
         if self.isRecording:
             return
         self.isRecording = True
-        # if self.device_index is None:
-        #     print("No default input device found")
-        #     return
-        # with self.lock:
         try:
             record_save(AUDIO_PATH)
-            # self.stream = self.audio.open(format=pyaudio.paInt16,
-            #                               channels=1,
-            #                               rate=44100,
-            #                               input=True,
-            #                               frames_per_buffer=1024)
-            #
-            # self.stream.start_stream()
-            #
-            # start_time = time.time()
-            # self.frames = []
-            # print("Recording...")
-            # while time.time() - start_time < RECORD_SECONDS:
-            #     data = self.stream.read(1024)
-            #     self.frames.append(data)
-            # print("Finished isRecording.")
-            #
-            # # 保存录音到文件
-            # with wave.open(os.path.join(os.path.dirname(__file__), 'output.wav'), 'wb') as wf:
-            #     wf.setnchannels(1)
-            #     wf.setsampwidth(self.audio.get_sample_size(pyaudio.paInt16))
-            #     wf.setframerate(44100)
-            #     wf.writeframes(b''.join(self.frames))
-            #
-            # self.stream.stop_stream()
-            # self.stream.close()
-            #
-            # self.frames = []
-            # self.audio.terminate()
 
             # 加载音频并提取特征
             data, sr = librosa.load(AUDIO_PATH, sr=None)
@@ -196,7 +154,7 @@ class VoiceCNN(nn.Module):
             self.isRecording = False
             return command
         except Exception as e:
-            print(f'Error in run: {e}')  # 添加日志
+            logging.error(f'Error in run: {e}')  # 添加日志
             self.isRecording = False
             if self.stream:
                 self.stream.stop_stream()
@@ -235,22 +193,30 @@ class VoiceWhisper:
             self.isRecording = False
             return command_en
         except Exception as e:
-            print(f'Error in run: {e}')  # 添加日志
+            logging.error(f'Error in run: {e}')  # 添加日志
             self.isRecording = False
             return None
 
 
 def turn_voice(request):
     try:
+        # 使用辅助函数检查无人机是否已连接
+        from myapp.drone import is_drone_connected, is_stream_on
+
+        # if not is_drone_connected():
+        #     logging.error("无人机未连接或未正确初始化")
+        #     voice.valid = False
+        #     return JsonResponse({'status': 0, 'message': '无人机未连接，无法开启语音控制'})
+
         with voice.lock:
             if voice.valid:
                 voice.valid = False
-                return JsonResponse({'status': 0, 'message': '关闭语音识别'})
+                return JsonResponse({'status': 0, 'message': '关闭语音控制'})
             elif not voice.valid:
                 voice.valid = True
-                return JsonResponse({'status': 1, 'message': '开启语音识别'})
+                return JsonResponse({'status': 1, 'message': '开启语音控制'})
     except Exception as e:
-        print(f'Error in turn_voice: {e}')
+        logging.error(f'Error in turn_voice: {e}')
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 
@@ -260,13 +226,12 @@ def record_voice(request):
         print(f'command: {command}')
         return JsonResponse({'status': 1, 'command': command})
     except Exception as e:
-        print(f'Error in record_voice: {e}')  # 添加日志
+        logging.error(f'Error in record_voice: {e}')  # 添加日志
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 
 # voice = VoiceCNN()
 voice = VoiceWhisper()
-
 
 if __name__ == "__main__":
     # voice = VoiceCNN()

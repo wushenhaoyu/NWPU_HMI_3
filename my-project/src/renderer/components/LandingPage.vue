@@ -116,42 +116,19 @@
                 <!----------------------无人机状态----------------------------->
                 <div v-if="value1===3">
 
-                  <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-                    <div style="width: 40%;text-align: center;">电池电量：</div>
-                    <div style="width: 32%;text-align: center;">{{ currentState.bat }}%</div>
-                  </div>
-                  <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-                    <div style="width: 40%;text-align: center;">飞行高度：</div>
-                    <div style="width: 32%;text-align: center;">{{ currentState.h }}cm</div>
-                  </div>
-
-                  <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-                    <div style="width: 40%;text-align: center;">飞行时间：</div>
-                    <div style="width: 32%;text-align: center;">{{ currentState.time }}s</div>
-                  </div>
-
-                  <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-                    <div style="width: 40%;text-align: center;">信号强度：</div>
-                    <div style="width: 32%;text-align: center;">{{ currentState.wifi }}s</div>
-                  </div>
-
-                  <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-                    <div style="width: 40%;text-align: center;">加速度：</div>
-                    <div style="width: 32%;text-align: center;">
-                      ({{ currentState.agx }},{{ currentState.agy }},{{ currentState.agz }})
+                 <div
+                    v-for="(item, index) in stateItems"
+                    :key="index"
+                    class="status-item"
+                  >
+                    <div class="label">{{ item.label }}：</div>
+                    <div class="value">
+                      {{
+                        currentState[item.key] !== null && currentState[item.key] !== undefined
+                          ? item.format(currentState[item.key])
+                          : "N/A"
+                      }}
                     </div>
-                  </div>
-
-                  <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-                    <div style="width: 40%;text-align: center;">速度：</div>
-                    <div style="width: 32%;text-align: center;">
-                      ({{ currentState.vgx }},{{ currentState.vgy }},{{ currentState.vgz }})
-                    </div>
-                  </div>
-
-                  <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-                    <div style="width: 40%;text-align: center;">航向角</div>
-                    <div style="width: 32%;text-align: center;">{{ currentState.pitch }}°</div>
                   </div>
 
                   <div style="height: 8vh;"></div>
@@ -191,44 +168,6 @@
 
                 <!------------------无人机状态----------------------------->
                 <div v-if="value2===1">
-
-<!--                  <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">-->
-<!--                    <div style="width: 40%;text-align: center;">电池电量：</div>-->
-<!--                    <div style="width: 32%;text-align: center;">{{ currentState.bat }}%</div>-->
-<!--                  </div>-->
-<!--                  <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">-->
-<!--                    <div style="width: 40%;text-align: center;">飞行高度：</div>-->
-<!--                    <div style="width: 32%;text-align: center;">{{ currentState.h }}cm</div>-->
-<!--                  </div>-->
-
-<!--                  <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">-->
-<!--                    <div style="width: 40%;text-align: center;">飞行时间：</div>-->
-<!--                    <div style="width: 32%;text-align: center;">{{ currentState.time }}s</div>-->
-<!--                  </div>-->
-
-<!--                  <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">-->
-<!--                    <div style="width: 40%;text-align: center;">信号强度：</div>-->
-<!--                    <div style="width: 32%;text-align: center;">{{ currentState.wifi }}s</div>-->
-<!--                  </div>-->
-
-<!--                  <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">-->
-<!--                    <div style="width: 40%;text-align: center;">加速度：</div>-->
-<!--                    <div style="width: 32%;text-align: center;">-->
-<!--                      ({{ currentState.agx }},{{ currentState.agy }},{{ currentState.agz }})-->
-<!--                    </div>-->
-<!--                  </div>-->
-
-<!--                  <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">-->
-<!--                    <div style="width: 40%;text-align: center;">速度：</div>-->
-<!--                    <div style="width: 32%;text-align: center;">-->
-<!--                      ({{ currentState.vgx }},{{ currentState.vgy }},{{ currentState.vgz }})-->
-<!--                    </div>-->
-<!--                  </div>-->
-
-<!--                  <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">-->
-<!--                    <div style="width: 40%;text-align: center;">航向角</div>-->
-<!--                    <div style="width: 32%;text-align: center;">{{ currentState.pitch }}°</div>-->
-<!--                  </div>-->
 
                   <div
                     v-for="(item, index) in stateItems"
@@ -276,50 +215,6 @@
 
                 <!--------------------按键控制---------------------------->
                 <div v-if="value2===3">
-<!--                  <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">-->
-<!--                    <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('takeoff')">-->
-<!--                      起飞-->
-<!--                    </el-button>-->
-<!--                    <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('land')">-->
-<!--                      降落-->
-<!--                    </el-button>-->
-<!--                  </div>-->
-
-<!--                  <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">-->
-<!--                    <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('up')">-->
-<!--                      上升-->
-<!--                    </el-button>-->
-<!--                    <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('down')">-->
-<!--                      下降-->
-<!--                    </el-button>-->
-<!--                  </div>-->
-
-<!--                  <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">-->
-<!--                    <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('forward')">-->
-<!--                      前进-->
-<!--                    </el-button>-->
-<!--                    <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('backward')">-->
-<!--                      后退-->
-<!--                    </el-button>-->
-<!--                  </div>-->
-
-<!--                  <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">-->
-<!--                    <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('left')">-->
-<!--                      左移-->
-<!--                    </el-button>-->
-<!--                    <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('right')">-->
-<!--                      右移-->
-<!--                    </el-button>-->
-<!--                  </div>-->
-
-<!--                  <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">-->
-<!--                    <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('rotate_left')">-->
-<!--                      左旋-->
-<!--                    </el-button>-->
-<!--                    <el-button type="primary" style="width: 35%;font-weight: 600;" @click="sendCommand('rotate_right')">-->
-<!--                      右旋-->
-<!--                    </el-button>-->
-<!--                  </div>-->
 
                   <div v-for="(group, index) in buttonGroups" :key="index" class="button-group">
                     <el-button
@@ -385,9 +280,15 @@
                   <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
                     <el-button type="primary" style="width: 80%;font-weight: 600;"
                                @click="recordVoice"
-                               :disabled="!isVoice"
-                               :title="isVoice ? '' : '请先开启语音控制'">
-                      开始录音
+                    :disabled="!isVoice || isRecordingVoice"
+                    :title="
+                          !isVoice
+                            ? '请先开启语音控制'
+                            : isRecordingVoice
+                              ? '正在录音，请稍后'
+                              : '开始录音'"
+                    >
+                    {{ isRecordingVoice ? '录音中...' : '开始录音' }}
                     </el-button>
                   </div>
                 </div>
@@ -446,7 +347,7 @@ export default {
 
       isVoice: false,
       voiceAction: "",
-      isRecordingVoice: true,
+      isRecordingVoice: false,
       progress: 0,
       progressStatus: 'success',
 
@@ -459,20 +360,20 @@ export default {
 
       stateItems: [
         { label: "电池电量", key: "bat", format: (val) => `${val}%` },
-        { label: "飞行高度", key: "h", format: (val) => `${val}cm` },
         { label: "飞行时间", key: "time", format: (val) => `${val}s` },
-        { label: "信号强度", key: "wifi", format: (val) => `${val} dBm` },
+        { label: "气压计高度", key: "baro", format: (val) => `${val}cm` },
+        { label: "下表面高度", key: "tof", format: (val) => `${val}cm` },
         {
-          label: "加速度",
-          key: "ag",
-          format: (val) => `(${val.agx}, ${val.agy}, ${val.agz})`
-        },
-        {
-          label: "速度",
+          label: "速度(X,Y,Z)",
           key: "vg",
           format: (val) => `(${val.vgx}, ${val.vgy}, ${val.vgz})`
         },
-        { label: "航向角", key: "pitch", format: (val) => `${val}°` },
+        {
+          label: "姿态(P,R,Y)",
+          key: "attitude",
+          format: (val) => `(${val.pitch}, ${val.roll}, ${val.yaw})`
+        },
+        { label: "信号强度", key: "wifi", format: (val) => `${val}` },
       ],
 
       buttonGroups: [
@@ -484,12 +385,6 @@ export default {
       ],
 
       currentState: {
-        pitch: 0,
-        roll: 0,
-        yaw: 0,
-        vgx: 0,
-        vgy: 0,
-        vgz: 0,
         templ: 0,
         temph: 0,
         tof: 0,
@@ -497,10 +392,10 @@ export default {
         bat: 0,
         baro: 0.0,
         time: 0,
-        agx: 0.0,
-        agy: 0.0,
-        agz: 0.0,
-        wifi: 0,
+        attitude: { pitch: 0, roll: 0, yaw: 0 },
+        ag: { agx: 0.0, agy: 0.0, agz: 0.0 },
+        vg: { vgx: 0.0, vgy: 0.0, vgz: 0.0 },
+        wifi: "0"
       },
 
       options1: [{
@@ -584,22 +479,28 @@ export default {
       this.CurrentStateTimer = setInterval(() => {
         this.$http.get('http://127.0.0.1:8000/get_current_state').then(response => {
           if (response.data.status === 1) {
-            this.currentState.agx = response.data.tello_state.agx;
-            this.currentState.agy = response.data.tello_state.agy;
-            this.currentState.agz = response.data.tello_state.agz;
+            this.currentState.attitude.pitch = response.data.tello_state.pitch;
+            this.currentState.attitude.roll = response.data.tello_state.roll;
+            this.currentState.attitude.yaw = response.data.tello_state.yaw;
+
+            this.currentState.vg.vgx = response.data.tello_state.vgx;
+            this.currentState.vg.vgy = response.data.tello_state.vgy;
+            this.currentState.vg.vgz = response.data.tello_state.vgz;
+
             this.currentState.bat = response.data.tello_state.bat;
-            this.currentState.baro = response.data.tello_state.baro;
-            this.currentState.h = response.data.tello_state.h;
-            this.currentState.temph = response.data.tello_state.temph;
-            this.currentState.templ = response.data.tello_state.templ;
-            this.currentState.tof = response.data.tello_state.tof;
             this.currentState.time = response.data.tello_state.time;
-            this.currentState.vgx = response.data.tello_state.vgx;
-            this.currentState.vgy = response.data.tello_state.vgy;
-            this.currentState.vgz = response.data.tello_state.vgz;
-            this.currentState.pitch = response.data.tello_state.pitch;
-            this.currentState.roll = response.data.tello_state.roll;
-            this.currentState.yaw = response.data.tello_state.yaw;
+
+            this.currentState.templ = response.data.tello_state.templ;
+            this.currentState.temph = response.data.tello_state.temph;
+
+            this.currentState.h = response.data.tello_state.h;
+            this.currentState.tof = response.data.tello_state.tof;
+            this.currentState.baro = response.data.tello_state.baro;
+
+            this.currentState.ag.agx = response.data.tello_state.agx;
+            this.currentState.ag.agy = response.data.tello_state.agy;
+            this.currentState.ag.agz = response.data.tello_state.agz;
+
             this.currentState.wifi = response.data.tello_state.wifi;
           } else {
             this.$message({
@@ -683,6 +584,26 @@ export default {
           });
     },
 
+    openVoice() {
+      this.$http.get('http://127.0.0.1:8000/turn_voice')
+          .then(response => {
+            if (response.data.status === 1) {
+              this.isVoice = true;
+              this.$message.success(response.data.message);
+            } else {
+              this.isVoice = false;
+              this.$message.error(response.data.message);
+              this.voiceAction = "";
+            }
+            console.log(response.data, this.isVoice);
+          })
+          .catch(error => {
+            console.error(error);
+            this.$message.error('语音控制操作失败');
+            this.voiceAction = ""; // 清除当前命令
+          });
+    },
+
     startProgress() {
       this.resetProgress(); // 先重置已有进度
       this.progressStatus = 'active'; // 新增状态标识
@@ -707,16 +628,27 @@ export default {
     },
 
     recordVoice() {
-      this.isRecordingVoice = true;
+      if (this.isVoice === false){
+        this.$message({
+          message: '请先开启语音控制',
+          type: 'warning'
+        });
+        return;
+      }
 
-      if (this.isRecordingVoice) {
+      // this.isRecordingVoice = true;
+
+      if (!this.isRecordingVoice) {
         this.$message({
           message: '正在录音，请稍后',
           type: 'warning'
         });
       }
+      else {
+        return;
+      }
 
-      this.isRecordingVoice = false;
+      this.isRecordingVoice = true;
       this.startProgress(); // 启动进度条
 
       this.$http.get('http://127.0.0.1:8000/record_voice')
@@ -729,12 +661,14 @@ export default {
               this.voiceAction = response.data.command;
               // 强制将进度设为 100% 后再重置，确保视觉完整性
               this.progress = 100;
-              setTimeout(() => this.resetProgress(), 500);
+              setTimeout(() => this.resetProgress(), 200);
+              this.isRecordingVoice = false;
             } else {
               this.$message({
                 message: '识别失败',
                 type: 'error'
               });
+              this.isRecordingVoice = false;
             }
           })
           .catch(error => {
@@ -751,12 +685,6 @@ export default {
       this.$http.post('http://127.0.0.1:8000/drone_control', {command: command})
           .then(response => {
             console.log(response.data);
-            if (this.isDroneConnected === false) {
-              this.$message({
-                message: "无人机摄像头未打开",
-                type: 'error'
-              });
-            }
             if (response.data.status === 1) {
               this.$message({
                 message: response.data.message,
@@ -827,26 +755,6 @@ export default {
               type: 'error'
             });
           })
-    },
-
-    openVoice() {
-      this.$http.get('http://127.0.0.1:8000/turn_voice')
-          .then(response => {
-            if (response.data.status === 1) {
-              this.isVoice = true;
-              this.$message.success(response.data.message);
-            } else {
-              this.isVoice = false;
-              this.$message.error(response.data.message);
-              this.voiceAction = "";
-            }
-            console.log(response.data, this.isVoice);
-          })
-          .catch(error => {
-            console.error(error);
-            this.$message.error('语音控制操作失败');
-            this.voiceAction = ""; // 清除当前命令
-          });
     },
 
     redirectToAdmin() {
@@ -1090,12 +998,13 @@ body {
 }
 
 .label {
-  width: 40%;
+  width: 50%;
   text-align: center;
+  margin-left: 10px;
 }
 
 .value {
-  width: 32%;
+  width: 50%;
   text-align: center;
 }
 </style>
