@@ -205,6 +205,17 @@
 
                 <!---------------------人脸跟随------------------------->
                 <div v-if="value2===2">
+
+                  <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
+                    <el-switch
+                      v-model="isVisualizationEnabled"
+                      active-text="开启可视化"
+                      inactive-text="关闭可视化"
+                      @change="toggleVisualization"
+                    >
+                    </el-switch>
+                  </div>
+
                   <div style="height: 40vh;"></div>
                   <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
                     <el-button type="primary" style="width: 80%;font-weight: 600;" @click="faceTrack">
@@ -428,7 +439,9 @@ export default {
           label: '语音控制'
         }],
       value1: 1,
-      value2: 1
+      value2: 1,
+
+      isVisualizationEnabled: false
     }
   },
 
@@ -521,6 +534,8 @@ export default {
         this.disconnectDrone();
         this.isShowImg2 = false;
         this.isDroneCameraOpen = false;
+        this.isFaceTracking = false;
+        this.isVisualizationEnabled = false;
       } else {
         this.connectDrone();
       }
@@ -742,6 +757,7 @@ export default {
               });
             } else if (response.data.status === 0) {
               this.isFaceTracking = false;
+              this.isVisualizationEnabled = false;
               this.$message({
                 message: response.data.message,
                 type: 'error'
@@ -977,6 +993,25 @@ export default {
               type: 'error'
             });
           });
+    },
+
+    toggleVisualization() {
+    this.$http.get('http://127.0.0.1:8000/toggle_visualization')
+      .then(response => {
+        if (response.data.status === 1) {
+          this.isVisualizationEnabled = true;
+          this.$message({
+            message: response.data.message,
+            type: 'success'
+          });
+        } else {
+          this.isVisualizationEnabled = false;
+          this.$message({
+            message: response.data.message,
+            type: 'error'
+          });
+        }
+      });
     }
   }
 }

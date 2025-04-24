@@ -62,6 +62,17 @@ class Drone:
         self.command_queue = queue.Queue()
         self.command_thread = None
 
+        self.visualization_enabled = False
+        self.visualizer_thread = None
+
+    def start_visualization(self):
+        self.tracker.visualization_enabled = True
+        self.tracker.visualizer.start()
+
+    def stop_visualization(self):
+        self.tracker.visualization_enabled = False
+        self.tracker.visualizer.stop()
+
     def connect(self):
         """连接无人机"""
         with self.lock:
@@ -470,8 +481,34 @@ def turn_face_track(request):
                 return JsonResponse({'status': 1, 'message': '打开人脸跟随'})
             else:
                 logging.info("停止人脸跟随")
+                drone.visualization_enabled = False
+                drone.stop_visualization()
                 return JsonResponse({'status': 0, 'message': '停止人脸跟随'})
 
     except Exception as e:
         logging.error(f"Error turning face tracking: {e}")
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+
+@csrf_exempt
+def toggle_visualization(request):
+    drone = get_drone()
+    try:
+        if drone is None or not drone.is_connected():
+            logging.error("无人机未连接")
+            return JsonResponse({'status': 0, 'message': '无人机未连接'})
+
+        if drone.visualization_enabled:
+            drone.visualization_enabled = False
+            drone.stop_visualization()
+
+            return JsonResponse({'status': 0, 'message': '关闭PID可视化'})
+        else:
+            drone.visualization_enabled = True
+            drone.start_visualization()
+
+            return JsonResponse({'status': 1, 'message': '打开PID可视化'})
+
+    except Exception as e:
+        logging.error(f"Error toggling visualization: {e}")
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)

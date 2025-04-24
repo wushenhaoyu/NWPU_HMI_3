@@ -44,4 +44,5 @@ urlpatterns = [
     path("update_speed", drone.update_speed, name="update_speed"),
     path("get_current_state", drone.get_current_state, name="get_current_state"),
     path("turn_face_track", drone.turn_face_track, name="turn_face_track"),
+    path("toggle_visualization", drone.toggle_visualization, name="toggle_visualization"),
 ]
