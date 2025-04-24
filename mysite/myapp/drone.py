@@ -14,6 +14,7 @@ from django.http import JsonResponse, StreamingHttpResponse, HttpResponse
 from myapp import wifi
 from .face_analysis import face_analysis_instance
 from .commands import COMMANDS_MAP
+from .face_track import FaceTracker
 
 # 配置日志
 logging.basicConfig(
@@ -26,22 +27,6 @@ logging.getLogger('pywifi').setLevel(logging.CRITICAL)
 # 全局无人机实例
 global_drone = None
 TELLO_SSID = "TELLO-FDDA9E"
-
-# # 控制指令映射
-# CTRL_MAP = {
-#     "takeoff": '起飞',
-#     "land": '降落',
-#     "stop": '停止',
-#     "up": '上升',
-#     "down": '下降',
-#     "forward": '前进',
-#     "backward": '后退',
-#     "left": '左移',
-#     "right": '右移',
-#     "rotate_left": '向左转',
-#     "rotate_right": '向右转',
-#     "battery": '查询电量'
-# }
 
 VIDEO_WIDTH = 960
 VIDEO_HEIGHT = 720
@@ -58,6 +43,7 @@ class Drone:
         self.isOpenDroneCamera = False
 
         self.faceDetect = face_analysis_instance
+        self.tracker = FaceTracker(self.tello, self.faceDetect)
 
         self.initialBarometer = 0
 
@@ -107,8 +93,10 @@ class Drone:
                 # print(frame.shape)
                 self.frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 if self.isTracking:
-                    self.frame, face_info = self.findFace(self.frame)
-                    self.trackFace(face_info)
+                    # self.frame, face_info = self.findFace(self.frame)
+                    # self.trackFace(face_info)
+                    self.frame, face_info = self.tracker.find_face(self.frame)
+                    self.tracker.track(face_info)
 
                 ret, jpeg = cv2.imencode('.jpg', self.frame)
                 return jpeg.tobytes() if ret else None
@@ -228,8 +216,8 @@ class Drone:
         speed_h = PID[0] * error_h + PID[1] * (error_h - self.hError)
         speed_v = PID[0] * error_v + PID[1] * (error_v - self.vError)
 
-        speed_h = int(np.clip(speed_h, -100, 100))
-        speed_v = int(np.clip(speed_v, -100, 100))
+        speed_h = int(np.clip(speed_h, -20, 20))
+        speed_v = int(np.clip(speed_v, -20, 20))
 
         if FBRANGE[0] < area < FBRANGE[1]:
             fb = 0
@@ -264,7 +252,7 @@ class Drone:
             try:
                 state = self.tello.get_current_state()
                 state['wifi'] = wifi.get_wifi_signal_strength()
-                print(state['wifi'])
+                # print(state['wifi'])
                 # 原始的 state['baro'] 单位是 m，计算后转化为 cm
                 state['baro'] = state['baro']*100 - self.initialBarometer
                 return state

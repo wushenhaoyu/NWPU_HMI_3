@@ -41,6 +41,7 @@ def get_wifi_signal_strength():
                 if "信号" in line or "Signal" in line:
                     parts = line.split(":")
                     if len(parts) > 1:
+                        # print(f"signal strength: {parts[1].strip()}")
                         return parts[1].strip()
     except Exception as e:
         print(f"Error: {e}")
@@ -143,6 +144,6 @@ def wifi_connect(target_ssid, max_retries=3):
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-    target_ssid = "TELLO-FDDA9E"
-    wifi_connect(target_ssid)
+    # target_ssid = "TELLO-FDDA9E"
+    # wifi_connect(target_ssid)
     get_wifi_signal_strength()
