@@ -421,7 +421,7 @@ export default {
 
       options1: [{
         value: 1,
-        label: '人脸操作'
+        label: '人脸录入管理'
       }, {
         value: 2,
         label: '手势控制'
@@ -438,7 +438,7 @@ export default {
         },
         {
           value: 2,
-          label: '人脸操作'
+          label: '人脸跟随'
         },
         {
           value: 3,
