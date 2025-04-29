@@ -79,7 +79,7 @@ class FaceLogin:
         self.frame = None
         self.label = ""  # 手势名称标签
 
-        # 新增标志位，指示是否应该继续处理帧
+        # 指示是否应该继续处理帧
         # 解决开摄像头、关闭后，get_frame_info继续运行再次打开摄像头
         self.isProcessingFrame = False
 

@@ -39,7 +39,7 @@
                 <div><img src="~@/assets/lg.png" alt="electron-vue" style="width: 80%;margin-left: 10%;"></div>
                 <div style="height: 10vh;"></div>
                 <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-                  <el-input style="width: 80%;" v-model="name" placeholder="请输入名字"></el-input>
+                  <el-input style="width: 80%;" v-model="name" placeholder="请输入名字（限英文字符）"></el-input>
                 </div>
                 <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
                   <el-button type="primary" style="width: 80%;font-weight: 600;" @click="storageFace">注册人脸
@@ -78,7 +78,7 @@
                 <div v-if="value1===1">
                   <div style="height: 20vh;"></div>
                   <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
-                    <el-input style="width: 80%;" v-model="name" placeholder="请输入名字"></el-input>
+                    <el-input style="width: 80%;" v-model="name" placeholder="请输入名字（限英文字符）"></el-input>
                   </div>
                   <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
                     <el-button type="primary" style="width: 80%;font-weight: 600;" @click="storageFace">录入人脸</el-button>
@@ -216,7 +216,17 @@
                     </el-switch>
                   </div>
 
-                  <div style="height: 40vh;"></div>
+                  <div style="height: 40vh; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                    <div style="font-weight: 900; margin-bottom: 2vh; text-align: center;">
+                      使用提示：
+                    </div>
+                    <ul style="list-style-type: none; padding: 0; margin: 0; text-align: left; width: 80%;">
+                      <li style="margin-bottom: 1vh;">1、请确保无人机有足够的飞行空间</li>
+                      <li style="margin-bottom: 1vh;">2、请勿在人多处使用，尽量确保无人机视角内只有一人</li>
+                      <li style="margin-bottom: 1vh;">3、最佳跟踪距离为1m左右</li>
+                    </ul>
+                  </div>
+
                   <div style="font-weight: 900;margin-top: 2vh;display: flex;justify-content: space-evenly;">
                     <el-button type="primary" style="width: 80%;font-weight: 600;" @click="faceTrack">
                       {{ isFaceTracking ? '停止' : '开启' }}人脸跟随
@@ -581,7 +591,6 @@ export default {
                 message: response.data.message,
                 type: 'success'
               });
-
             } else {
               this.$message({
                 message: response.data.message,

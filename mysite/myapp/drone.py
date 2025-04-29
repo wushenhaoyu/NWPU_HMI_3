@@ -28,11 +28,6 @@ logging.getLogger('pywifi').setLevel(logging.CRITICAL)
 global_drone = None
 TELLO_SSID = "TELLO-FDDA9E"
 
-VIDEO_WIDTH = 960
-VIDEO_HEIGHT = 720
-PID = [0.4, 0.4, 0]
-FBRANGE = [30000, 50000]  # forward/backward range
-
 
 class Drone:
     def __init__(self):
@@ -43,7 +38,7 @@ class Drone:
         self.isOpenDroneCamera = False
 
         self.faceDetect = face_analysis_instance
-        self.tracker = FaceTracker(self.tello, self.faceDetect)
+        self.tracker = None
 
         self.initialBarometer = 0
 
@@ -81,6 +76,7 @@ class Drone:
                 self.tello.connect()
                 self._is_connected = True
                 self.initialBarometer = self.tello.get_barometer()
+                self.tracker = FaceTracker(self.tello, self.faceDetect)
                 logging.info("无人机连接成功")
                 return True
             except Exception as e:
@@ -104,8 +100,6 @@ class Drone:
                 # print(frame.shape)
                 self.frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 if self.isTracking:
-                    # self.frame, face_info = self.findFace(self.frame)
-                    # self.trackFace(face_info)
                     self.frame, face_info = self.tracker.find_face(self.frame)
                     self.tracker.track(face_info)
 
@@ -182,77 +176,9 @@ class Drone:
         except Exception as e:
             logging.error(f"执行控制指令时出错: {e}")
 
-    def findFace(self, frame):
-        faces = self.faceDetect.get(frame)
-
-        if len(faces) == 0:
-            return self.frame, [[0, 0], 0]
-        
-        max_area = -1
-        max_face_center = [0, 0]
-        
-        for face in faces:
-            bbox = face['bbox']
-            x1, y1, x2, y2 = int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])
-
-            # 检查边界框坐标是否在有效范围内
-            if x1 < 0 or y1 < 0 or x2 >= self.frame.shape[1] or y2 >= self.frame.shape[0]:
-                return frame, [[0, 0], 0]
-
-            cx = (x1 + x2) // 2
-            cy = (y1 + y2) // 2
-            area = (x2 - x1) * (y2 - y1)
-
-            # 更新最大面积和对应的中心点
-            if area > max_area:
-                max_area = area
-                max_face_center = [cx, cy]
-
-            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-            cv2.circle(frame, (cx, cy), 3, (0, 255, 0), cv2.FILLED)
-            cv2.line(frame, (cx, cy), (VIDEO_WIDTH // 2, VIDEO_HEIGHT // 2), (0, 0, 255), 2)
-                
-        return frame, [max_face_center, max_area]
-    
-    def trackFace(self, face_info):
-        area = face_info[1]
-        x, y = face_info[0]
-        fb = 0
-
-        # 计算水平和垂直误差
-        error_h = x - VIDEO_WIDTH // 2
-        error_v = y - VIDEO_HEIGHT // 2
-
-        # PID 控制计算
-        speed_h = PID[0] * error_h + PID[1] * (error_h - self.hError)
-        speed_v = PID[0] * error_v + PID[1] * (error_v - self.vError)
-
-        speed_h = int(np.clip(speed_h, -20, 20))
-        speed_v = int(np.clip(speed_v, -20, 20))
-
-        if FBRANGE[0] < area < FBRANGE[1]:
-            fb = 0
-        elif area > FBRANGE[1]:
-            fb = -20
-        elif area < FBRANGE[0] and area != 0:
-            fb = 20
-
-        if x == 0:
-            speed_h = 0
-            error_h = 0
-        if y == 0:
-            speed_v = 0
-            error_v = 0
-
-        print("fb: ", fb, "speed_v: ", -speed_v, "speed_h: ", speed_h, "area: ", area)
-        self.tello.send_rc_control(0, fb, -speed_v, speed_h)
-
-        self.hError = error_h
-        self.vError = error_v
-
     def update_speed(self, speed):
         with self.lock:
-            self.channel_rod = max(30, min(100, speed))  # 限制在10-20之间
+            self.channel_rod = max(30, min(100, speed))
 
     def get_battery(self):
         with self.lock:
@@ -500,6 +426,7 @@ def toggle_visualization(request):
 
         if drone.visualization_enabled:
             drone.visualization_enabled = False
+
             drone.stop_visualization()
 
             return JsonResponse({'status': 0, 'message': '关闭PID可视化'})
