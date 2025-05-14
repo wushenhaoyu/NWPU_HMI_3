@@ -692,6 +692,9 @@ export default {
                 message: '识别失败',
                 type: 'error'
               });
+              this.voiceAction = "";
+              this.progress = 0;
+              setTimeout(() => this.resetProgress(), 200);
               this.isRecordingVoice = false;
             }
           })

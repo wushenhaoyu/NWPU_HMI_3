@@ -188,6 +188,9 @@ class VoiceWhisper:
             result_s = self.converter.convert(result_t["text"])  # 简体
             command_s = result_s.split('\n')[0]
             print(f'command_s: {command_s}')
+            if command_s not in COMMANDS_MAP_CN:
+                self.isRecording = False
+                return ""
             command_en = COMMANDS_MAP_CN[command_s]  # 返回英文指令
 
             self.isRecording = False
@@ -203,10 +206,10 @@ def turn_voice(request):
         # 使用辅助函数检查无人机是否已连接
         from myapp.drone import is_drone_connected, is_stream_on
 
-        # if not is_drone_connected():
-        #     logging.error("无人机未连接或未正确初始化")
-        #     voice.valid = False
-        #     return JsonResponse({'status': 0, 'message': '无人机未连接，无法开启语音控制'})
+        if not is_drone_connected():
+            logging.error("无人机未连接或未正确初始化")
+            voice.valid = False
+            return JsonResponse({'status': 0, 'message': '无人机未连接，无法开启语音控制'})
 
         with voice.lock:
             if voice.valid:
@@ -224,7 +227,10 @@ def record_voice(request):
     try:
         command = voice.run()
         print(f'command: {command}')
-        return JsonResponse({'status': 1, 'command': command})
+        if command is "":
+            return JsonResponse({'status': 0, 'message': '未识别到指令'})
+        else:
+            return JsonResponse({'status': 1, 'command': command})
     except Exception as e:
         logging.error(f'Error in record_voice: {e}')  # 添加日志
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
