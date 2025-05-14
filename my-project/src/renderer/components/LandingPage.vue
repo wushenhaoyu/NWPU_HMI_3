@@ -332,9 +332,9 @@ export default {
   data() {
     return {
       fullscreenLoading: false,
-      // isLogin: 0,
+      isLogin: 0,
       name: '',
-      isLogin: 2,
+      // isLogin: 2,
 
       imgurl1_: 'http://localhost:8000/pc_video',
       isShowImg1: false,

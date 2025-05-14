@@ -7,10 +7,11 @@ import queue
 
 
 class PIDController:
-    def __init__(self, Kp, Kd, Ki, speed_limit):
+    def __init__(self, Kp, Ki, Kd, speed_limit):
         self.Kp = Kp
-        self.Kd = Kd
         self.Ki = Ki
+        self.Kd = Kd
+
         self.speed_limit = speed_limit
 
         self.integral = 0
@@ -25,7 +26,7 @@ class PIDController:
         self.integral = np.clip(self.integral, -100, 100)  # 防积分饱和
         derivative = (error - self.prev_error) / dt if dt > 0 else 0
 
-        output = self.Kp * error + self.Kd * derivative + self.Ki * self.integral
+        output = self.Kp * error + self.Ki * self.integral + self.Kd * derivative
         output = int(np.clip(output, -self.speed_limit, self.speed_limit))
         self.prev_error = error
         return output
@@ -45,9 +46,9 @@ class FaceTracker:
         self.fb_scale = 100
 
         # PID 控制器初始化
-        self.pid_h = PIDController(Kp=0.25, Kd=0.02, Ki=0.005, speed_limit=self.speed_limit)
-        self.pid_v = PIDController(Kp=0.25, Kd=0.02, Ki=0.005, speed_limit=self.speed_limit)
-        self.pid_fb = PIDController(Kp=0.25, Kd=0.02, Ki=0.005, speed_limit=self.speed_limit)
+        self.pid_h = PIDController(Kp=0.25, Ki=0.005, Kd=0.02, speed_limit=self.speed_limit)
+        self.pid_v = PIDController(Kp=0.25, Ki=0.005, Kd=0.02, speed_limit=self.speed_limit)
+        self.pid_fb = PIDController(Kp=0.25, Ki=0.005, Kd=0.02, speed_limit=self.speed_limit)
 
         self.last_time = time.time()
 
